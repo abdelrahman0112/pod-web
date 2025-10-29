@@ -164,6 +164,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/hackathons/{hackathon}/export-participants', [HackathonController::class, 'exportParticipants'])->name('hackathons.export-participants');
 
     // Internship Applications
+    Route::get('/internships', [InternshipApplicationController::class, 'index'])->name('internships.index');
     Route::get('/internships/apply', [InternshipApplicationController::class, 'create'])->name('internships.apply');
     Route::post('/internships/apply', [InternshipApplicationController::class, 'store'])->name('internships.store');
 

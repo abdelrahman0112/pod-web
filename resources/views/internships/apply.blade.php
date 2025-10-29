@@ -39,6 +39,7 @@
 
                 <form method="POST" action="{{ route('internships.store') }}" class="space-y-8">
                     @csrf
+                    <input type="hidden" name="internship_id" value="{{ $internship_id ?? '' }}">
 
                     <!-- Personal Information -->
                     <div>

@@ -11,9 +11,10 @@ class InternshipApplicationController extends Controller
     /**
      * Display the internship application form.
      */
-    public function create()
+    public function create(Request $request)
     {
-        return view('internships.apply');
+        $internship_id = $request->query('internship_id');
+        return view('internships.apply', compact('internship_id'));
     }
 
     /**
@@ -43,8 +44,10 @@ class InternshipApplicationController extends Controller
             'terms' => 'accepted',
         ]);
 
+        $validated['internship_id'] = $request->internship_id;
         // Create the internship application
         $application = InternshipApplication::create([
+            'internship_id' => $validated['internship_id'],
             'user_id' => Auth::id(),
             'full_name' => $validated['full_name'],
             'email' => $validated['email'],
@@ -67,16 +70,20 @@ class InternshipApplicationController extends Controller
     }
 
     /**
-     * Display all internship applications for admin.
+     * Display the internship index page.
      */
     public function index()
     {
-        // For future admin functionality
-        $applications = InternshipApplication::with('user')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $internships = \App\Models\Internship::where('status', 'open')
+            ->orderBy('application_deadline', 'asc')
+            ->get();
 
-        return view('admin.internships.index', compact('applications'));
+        $myApplications = InternshipApplication::where('user_id', Auth::id())
+            ->with('internship')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('internships.index', compact('internships', 'myApplications'));
     }
 
     /**
