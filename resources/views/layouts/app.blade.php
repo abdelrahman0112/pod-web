@@ -97,6 +97,20 @@
             font-size: 1.3rem;
         }
         
+        /* Business badge tooltip */
+        .badge-group {
+            position: relative;
+        }
+        
+        .badge-group:hover .badge-tooltip {
+            opacity: 1 !important;
+        }
+        
+        .badge-tooltip {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
         .sidebar-collapsed .mt-auto > div {
             padding: 0.5rem;
         }

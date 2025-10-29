@@ -247,7 +247,7 @@
                                     `}
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors">${user.name || 'User'}</div>
+                                    <div class="text-sm font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors flex items-center">${user.name || 'User'}${(user.role === 'client' || user.role === 'admin' || user.role === 'superadmin') ? (() => { const isAdmin = user.role === 'admin' || user.role === 'superadmin'; const tooltip = isAdmin ? 'Administrator' : 'Business Account'; return `<span class="inline-flex items-center justify-center w-4 h-4 bg-emerald-500 rounded-full flex-shrink-0 ml-1.5 badge-group relative" title="${tooltip}" aria-label="${tooltip}" onclick="event.stopPropagation();" onmouseenter="event.stopPropagation();"><i class="ri-check-line text-white text-xs leading-none"></i><span class="badge-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded whitespace-nowrap transition-opacity pointer-events-none z-50">${tooltip}<span class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></span></span></span>`; })() : ''}</div>
                                     ${user.title ? `<div class="text-xs text-slate-500 line-clamp-1">${user.title}</div>` : ''}
                                 </div>
                                 <i class="ri-arrow-right-s-line text-slate-300 group-hover:text-indigo-500 transition-colors"></i>
@@ -272,7 +272,7 @@
                                         <div class="text-xs text-slate-500 mt-1.5 flex items-center space-x-2">
                                             <span class="flex items-center space-x-1">
                                                 <i class="ri-user-line"></i>
-                                                <span>${post.user ? post.user.name : 'User'}</span>
+                                                <span class="flex items-center">${post.user ? post.user.name : 'User'}${post.user && (post.user.role === 'client' || post.user.role === 'admin' || post.user.role === 'superadmin') ? (() => { const isAdmin = post.user.role === 'admin' || post.user.role === 'superadmin'; const tooltip = isAdmin ? 'Administrator' : 'Business Account'; return `<span class="inline-flex items-center justify-center w-4 h-4 bg-emerald-500 rounded-full flex-shrink-0 ml-1.5 badge-group relative" title="${tooltip}" aria-label="${tooltip}" onclick="event.stopPropagation();" onmouseenter="event.stopPropagation();"><i class="ri-check-line text-white text-xs leading-none"></i><span class="badge-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded whitespace-nowrap transition-opacity pointer-events-none z-50">${tooltip}<span class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></span></span></span>`; })() : ''}</span>
                                             </span>
                                             <span>•</span>
                                             <span class="flex items-center space-x-1">

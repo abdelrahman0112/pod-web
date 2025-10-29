@@ -41,7 +41,7 @@
                     <h1 class="text-3xl font-bold text-slate-800 mb-2">{{ $hackathon->title }}</h1>
                     <div class="flex items-center space-x-2 text-sm text-slate-500">
                         <i class="ri-user-line"></i>
-                        <span>{{ $hackathon->creator->name ?? 'Organizer' }}</span>
+                        <span class="flex items-center">{{ $hackathon->creator->name ?? 'Organizer' }}<x-business-badge :user="$hackathon->creator" /></span>
                     </div>
                 </div>
                 
@@ -349,7 +349,7 @@
                             size="sm"
                             :color="$hackathon->creator->avatar_color ?? null" />
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-slate-800 group-hover:text-indigo-600 transition-colors truncate">{{ $hackathon->creator->name }}</p>
+                            <p class="text-sm font-medium text-slate-800 group-hover:text-indigo-600 transition-colors truncate flex items-center">{{ $hackathon->creator->name }}<x-business-badge :user="$hackathon->creator" /></p>
                             <p class="text-xs text-slate-500 truncate">{{ $hackathon->creator->job_title ?? 'Organizer' }}</p>
                         </div>
                         <div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>

@@ -7,8 +7,8 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             Create a New Post
         </h2>
-        <a href="{{ route('posts.index') }}" class="btn-secondary">
-            Back to Posts
+        <a href="{{ route('home') }}" class="btn-secondary">
+            Back to Dashboard
         </a>
     </div>
 @endsection
@@ -160,7 +160,7 @@
                             <button type="button" id="save-draft" class="btn-secondary">
                                 Save as Draft
                             </button>
-                            <a href="{{ route('posts.index') }}" class="text-gray-500 hover:text-gray-700">
+                            <a href="{{ route('home') }}" class="text-gray-500 hover:text-gray-700">
                                 Cancel
                             </a>
                         </div>

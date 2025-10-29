@@ -6,8 +6,8 @@
 <x-page-header 
     title="Jobs"
     description="Find your next career opportunity in data science and analytics"
-    actionUrl="{{ route('jobs.create') }}"
-    actionText="Post Job"
+    actionUrl="{{ auth()->check() && auth()->user()->canPostJobs() ? route('jobs.create') : '' }}"
+    actionText="{{ auth()->check() && auth()->user()->canPostJobs() ? 'Post Job' : '' }}"
     icon="ri-add-line"
 />
 
@@ -168,7 +168,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="jobs-container">
         @if($jobs->count() > 0)
                 @foreach($jobs as $job)
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg hover:shadow-indigo-100/50 transition-all group">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 hover:shadow-lg hover:shadow-indigo-100/50 transition-all group">
                         <div class="p-6">
                             <!-- Job Poster -->
                             <div class="mb-2">
@@ -179,7 +179,9 @@
                                         size="sm"
                                         :color="$job->poster->avatar_color ?? null" />
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-slate-800 group-hover/poster:text-indigo-600 transition-colors truncate">{{ $job->poster->name }}</p>
+                                        <p class="text-sm font-medium text-slate-800 group-hover/poster:text-indigo-600 transition-colors flex items-center">
+                                            <span class="truncate">{{ $job->poster->name }}</span><x-business-badge :user="$job->poster" />
+                                        </p>
                                         <p class="text-xs text-slate-500">{{ $job->company_name }}</p>
                                     </div>
                                 </a>
@@ -295,24 +297,17 @@
                 @endforeach
         @else
             <!-- No Jobs Found -->
-            <div class="text-center py-12">
-                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="ri-briefcase-line text-slate-400 text-2xl"></i>
-                </div>
-                <h3 class="text-lg font-semibold text-slate-800 mb-2">No Jobs Found</h3>
-                <p class="text-slate-600 mb-6">
-                    @if(request()->hasAny(['search', 'category', 'experience_level', 'location_type', 'skills']))
-                        Try adjusting your search criteria to find more opportunities.
-                    @else
-                        Be the first to post a job opportunity and help others find their next career move.
-                    @endif
-                </p>
-                <a href="{{ route('jobs.create') }}" 
-                   class="bg-indigo-600 text-white px-6 py-3 rounded-button hover:bg-indigo-700 transition-colors !rounded-button whitespace-nowrap inline-flex items-center space-x-2">
-                    <i class="ri-add-line"></i>
-                    <span>Post a Job</span>
-                </a>
-            </div>
+            <x-empty-search-state
+                icon="ri-briefcase-line"
+                iconBg="from-indigo-100 to-purple-100"
+                iconColor="text-indigo-400"
+                :filterKeys="['search', 'category', 'experience_level', 'location_type', 'skills']"
+                clearFiltersFunction="clearAllFilters"
+                title="No Jobs Found"
+                titleFiltered="No Jobs Match Your Filters"
+                description="There are no job listings available at the moment. Check back later for new opportunities!"
+                descriptionFiltered="No jobs match your current filters. Try adjusting your search criteria or clearing the filters to see more job opportunities."
+            />
         @endif
         </div>
         
@@ -693,6 +688,28 @@
             }
         });
     });
+
+    function clearAllFilters() {
+        console.log('🗑️ Clearing all filters');
+        // Get the Alpine.js component instance
+        const jobFiltersComponent = Alpine.$data(document.querySelector('[x-data="jobFilters()"]'));
+        if (jobFiltersComponent) {
+            jobFiltersComponent.selectedCategory = null;
+            jobFiltersComponent.selectedExperienceLevel = null;
+            jobFiltersComponent.selectedLocationType = null;
+            jobFiltersComponent.selectedSalaryRange = null;
+            jobFiltersComponent.selectedDatePosted = null;
+            jobFiltersComponent.searchQuery = '';
+            
+            // Clear search input
+            const searchInput = document.querySelector('input[name="search"]');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            jobFiltersComponent.applyFilters();
+        }
+    }
 
 </script>
 @endpush

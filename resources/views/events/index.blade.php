@@ -6,8 +6,8 @@
 <x-page-header 
     title="Events"
     description="Discover and join amazing data science events in your area"
-    actionUrl="{{ route('events.create') }}"
-    actionText="Create Event"
+    actionUrl="{{ auth()->check() && auth()->user()->canCreateEvents() ? route('events.create') : '' }}"
+    actionText="{{ auth()->check() && auth()->user()->canCreateEvents() ? 'Create Event' : '' }}"
 />
 
 <!-- Filters -->
@@ -197,29 +197,17 @@
             @endforeach
             
             @if($events->isEmpty())
-            <!-- Empty State -->
-            <div class="col-span-full flex flex-col items-center justify-center py-16 px-8">
-                <div class="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mb-6">
-                    <i class="ri-calendar-event-line text-4xl text-indigo-400"></i>
-                </div>
-                
-                <h3 class="text-xl font-semibold text-slate-800 mb-3">No Events Found</h3>
-                
-                @if(request()->hasAny(['category', 'date_range', 'format', 'search', 'specific_date']))
-                    <p class="text-slate-600 text-center mb-6 max-w-md">
-                        No events match your current filters. Try adjusting your search criteria or clearing the filters to see more events.
-                    </p>
-                    
-                    <button onclick="clearAllFilters()" class="bg-indigo-600 text-white px-6 py-3 rounded-button hover:bg-indigo-700 transition-colors !rounded-button whitespace-nowrap">
-                        <i class="ri-refresh-line mr-2"></i>
-                        Clear All Filters
-                    </button>
-                @else
-                    <p class="text-slate-600 text-center mb-6 max-w-md">
-                        There are no events scheduled at the moment. Check back later for new events!
-                    </p>
-                @endif
-            </div>
+                <x-empty-search-state
+                    icon="ri-calendar-event-line"
+                    iconBg="from-indigo-100 to-purple-100"
+                    iconColor="text-indigo-400"
+                    :filterKeys="['category', 'date_range', 'format', 'search', 'specific_date']"
+                    clearFiltersFunction="clearAllFilters"
+                    title="No Events Found"
+                    titleFiltered="No Events Match Your Filters"
+                    description="There are no events scheduled at the moment. Check back later for new events!"
+                    descriptionFiltered="No events match your current filters. Try adjusting your search criteria or clearing the filters to see more events."
+                />
             @endif
         </div>
 

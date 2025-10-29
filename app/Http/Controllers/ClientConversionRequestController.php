@@ -9,11 +9,6 @@ use Illuminate\View\View;
 
 class ClientConversionRequestController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     /**
      * Show the form for creating a new client conversion request.
      */
@@ -40,7 +35,6 @@ class ClientConversionRequestController extends Controller
             'company_name' => 'required|string|max:255',
             'business_field' => 'required|string|max:255',
             'company_website' => 'nullable|url|max:255',
-            'business_registration_info' => 'nullable|string|max:1000',
             'linkedin_company_page' => 'nullable|url|max:255',
             'additional_info' => 'nullable|string|max:2000',
         ]);
@@ -98,7 +92,6 @@ class ClientConversionRequestController extends Controller
             'company_name' => 'required|string|max:255',
             'business_field' => 'required|string|max:255',
             'company_website' => 'nullable|url|max:255',
-            'business_registration_info' => 'nullable|string|max:1000',
             'linkedin_company_page' => 'nullable|url|max:255',
             'additional_info' => 'nullable|string|max:2000',
         ]);

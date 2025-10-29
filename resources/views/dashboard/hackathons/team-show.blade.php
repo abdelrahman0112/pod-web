@@ -102,7 +102,7 @@
                                 size="sm"
                                 :color="$team->leader->avatar_color ?? null"
                             />
-                            <span class="ml-2 text-slate-800 font-medium">{{ $team->leader->name }}</span>
+                            <span class="ml-2 text-slate-800 font-medium flex items-center">{{ $team->leader->name }}<x-business-badge :user="$team->leader" /></span>
                             @if($isLeader)
                                 <span class="ml-2 text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full">You</span>
                             @endif
@@ -297,7 +297,7 @@
                                 :color="$team->leader->avatar_color ?? null"
                             />
                             <div>
-                                <p class="font-semibold text-slate-800">{{ $team->leader->name }}</p>
+                                <p class="font-semibold text-slate-800 flex items-center">{{ $team->leader->name }}<x-business-badge :user="$team->leader" /></p>
                                 <p class="text-sm text-indigo-600">Team Leader</p>
                                 @if($team->leader->email)
                                     <p class="text-xs text-slate-500">{{ $team->leader->email }}</p>
@@ -320,7 +320,7 @@
                                     :color="$member->user->avatar_color ?? null"
                                 />
                                 <div>
-                                    <p class="font-semibold text-slate-800">{{ $member->user->name }}</p>
+                                    <p class="font-semibold text-slate-800 flex items-center">{{ $member->user->name }}<x-business-badge :user="$member->user" /></p>
                                     <p class="text-sm text-slate-600">Member</p>
                                     @if($member->user->email)
                                         <p class="text-xs text-slate-500">{{ $member->user->email }}</p>
@@ -362,7 +362,7 @@
                                         />
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center gap-2">
-                                                <p class="text-sm font-medium text-slate-800 truncate">{{ $invitation->invitee->name }}</p>
+                                                <p class="text-sm font-medium text-slate-800 truncate flex items-center">{{ $invitation->invitee->name }}<x-business-badge :user="$invitation->invitee" /></p>
                                                 <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Pending</span>
                                             </div>
                                             @if($invitation->message)

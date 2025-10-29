@@ -36,6 +36,11 @@ class CommentController extends Controller
         $comment = Comment::create($validated);
         $comment->load('user');
 
+        // Ensure user role is visible for business badge in JavaScript
+        if ($comment->user) {
+            $comment->user->makeVisible('role');
+        }
+
         // Increment post comments count
         $post->increment('comments_count');
 
@@ -114,6 +119,11 @@ class CommentController extends Controller
 
         // Transform comments to include reply count and user permissions
         $commentsData = $comments->getCollection()->map(function ($comment) {
+            // Make user role visible for business badge
+            if ($comment->user) {
+                $comment->user->makeVisible('role');
+            }
+
             $commentArray = $comment->toArray();
             $commentArray['can_edit'] = $comment->canUserEdit(auth()->user());
             $commentArray['replies_count'] = $comment->replies->count();
@@ -121,12 +131,22 @@ class CommentController extends Controller
             // Process nested replies recursively
             if ($comment->replies) {
                 $commentArray['replies'] = $comment->replies->map(function ($reply) {
+                    // Make user role visible for nested replies
+                    if ($reply->user) {
+                        $reply->user->makeVisible('role');
+                    }
+
                     $replyArray = $reply->toArray();
                     $replyArray['can_edit'] = $reply->canUserEdit(auth()->user());
 
                     // Process nested replies for the reply
                     if ($reply->replies) {
                         $replyArray['replies'] = $reply->replies->map(function ($nestedReply) {
+                            // Make user role visible for nested nested replies
+                            if ($nestedReply->user) {
+                                $nestedReply->user->makeVisible('role');
+                            }
+
                             $nestedReplyArray = $nestedReply->toArray();
                             $nestedReplyArray['can_edit'] = $nestedReply->canUserEdit(auth()->user());
 

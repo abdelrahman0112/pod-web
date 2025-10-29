@@ -28,7 +28,7 @@
                     
                     <!-- User Info -->
                     <div class="flex-1 pb-2">
-                        <h1 class="text-3xl lg:text-4xl font-bold text-slate-800 mb-2">{{ $user->name ?? 'User Name' }}</h1>
+                        <h1 class="text-3xl lg:text-4xl font-bold text-slate-800 mb-2 flex items-center">{{ $user->name ?? 'User Name' }}<x-business-badge :user="$user" /></h1>
                         @if($user->title)
                             <p class="text-lg text-slate-600 mb-2">{{ $user->title }}</p>
                         @endif
@@ -219,6 +219,115 @@
         <!-- Sidebar -->
         <div class="w-full lg:w-80 lg:flex-shrink-0 min-w-0">
             <div class="space-y-4 lg:space-y-6 w-full">
+                <!-- Client Conversion Request Widget (only for regular users viewing their own profile, or client users) -->
+                @if(auth()->check() && auth()->id() === $user->id && ($user->isRegularUser() || $user->isClient()))
+                    @php
+                        $pendingRequest = $user->clientConversionRequests()->where('status', 'pending')->first();
+                        $rejectedRequest = $user->clientConversionRequests()->where('status', 'rejected')->latest()->first();
+                        $approvedRequest = $user->clientConversionRequests()->where('status', 'approved')->latest()->first();
+                    @endphp
+                    
+                    <!-- Upgrade to Business Account Widget -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 lg:p-6">
+                        @if($user->isClient())
+                            <div class="text-center mb-5">
+                                <p class="text-base font-medium text-slate-700 max-w-md mx-auto">
+                                    You are now eligible for the following business features:
+                                </p>
+                            </div>
+                        @else
+                            <div class="text-center mb-5">
+                                <!-- Revenue illustration placeholder - SVG will be provided here -->
+                                <div class="w-24 h-24 mx-auto mb-4 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                                    <i class="ri-building-4-line text-emerald-600 text-4xl"></i>
+                                    <!-- TODO: Replace with provided SVG illustration -->
+                                </div>
+                                <h3 class="text-xl font-bold text-slate-900 mb-2">Upgrade to Business Account</h3>
+                                <p class="text-sm text-slate-600 max-w-md mx-auto">
+                                    Transform your profile into a powerful business account and unlock exclusive features designed to help you grow your business.
+                                </p>
+                            </div>
+                        @endif
+                        
+                        <div class="space-y-2.5 mb-6">
+                            <div class="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+                                <div class="flex-shrink-0 w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                                    <i class="ri-check-line text-emerald-600 text-xs font-bold"></i>
+                                </div>
+                                <span class="text-sm text-slate-700 font-medium flex-1">Create and manage events</span>
+                            </div>
+                            <div class="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+                                <div class="flex-shrink-0 w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                                    <i class="ri-check-line text-emerald-600 text-xs font-bold"></i>
+                                </div>
+                                <span class="text-sm text-slate-700 font-medium flex-1">Post job opportunities</span>
+                            </div>
+                            <div class="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+                                <div class="flex-shrink-0 w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                                    <i class="ri-check-line text-emerald-600 text-xs font-bold"></i>
+                                </div>
+                                <span class="text-sm text-slate-700 font-medium flex-1">Host hackathons</span>
+                            </div>
+                            <div class="flex items-center space-x-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+                                <div class="flex-shrink-0 w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                                    <i class="ri-check-line text-emerald-600 text-xs font-bold"></i>
+                                </div>
+                                <span class="text-sm text-slate-700 font-medium flex-1">Access AI business tools</span>
+                            </div>
+                        </div>
+                        
+                        @if($user->isClient())
+                            <button disabled
+                                    class="w-full bg-emerald-200 text-emerald-800 px-6 py-3 rounded-lg cursor-default font-semibold text-sm flex items-center justify-center space-x-2">
+                                <i class="ri-checkbox-circle-line"></i>
+                                <span>Business Account Active</span>
+                            </button>
+                        @elseif($pendingRequest)
+                            <button disabled
+                                    class="w-full bg-slate-300 text-slate-600 px-6 py-3 rounded-lg cursor-not-allowed font-semibold text-sm flex items-center justify-center space-x-2">
+                                <i class="ri-time-line"></i>
+                                <span>Request Pending</span>
+                            </button>
+                        @else
+                            <button onclick="requestClientConversion()" 
+                                    class="w-full bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-semibold text-sm flex items-center justify-center space-x-2 group">
+                                <span>{{ $rejectedRequest ? 'Submit New Request' : 'Request Business Account' }}</span>
+                                <i class="ri-arrow-right-line group-hover:translate-x-1 transition-transform"></i>
+                            </button>
+                        @endif
+
+                        <!-- Status Label at Bottom -->
+                        @if($user->isClient())
+                            <!-- Hide all status labels for active clients -->
+                        @elseif($pendingRequest)
+                            <div class="mt-4 pt-4 border-t border-slate-200">
+                                <div class="flex items-center justify-center space-x-2 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                    <i class="ri-time-line text-yellow-600"></i>
+                                    <span class="text-sm font-medium text-yellow-800">Request Under Review</span>
+                                </div>
+                                <p class="text-xs text-slate-500 text-center mt-2">
+                                    Submitted on {{ $pendingRequest->created_at->format('M d, Y') }}
+                                </p>
+                            </div>
+                        @elseif($rejectedRequest)
+                            <div class="mt-4 pt-4 border-t border-slate-200">
+                                <div class="flex items-center justify-center space-x-2 px-4 py-2 bg-red-50 border border-red-200 rounded-lg">
+                                    <i class="ri-close-circle-line text-red-600"></i>
+                                    <span class="text-sm font-medium text-red-800">Previous Request Rejected</span>
+                                </div>
+                                @if($rejectedRequest->admin_notes)
+                                    <p class="text-xs text-slate-600 mt-2 text-center">
+                                        <span class="font-medium">Reason:</span> {{ $rejectedRequest->admin_notes }}
+                                    </p>
+                                @endif
+                                <p class="text-xs text-slate-500 text-center mt-1">
+                                    Reviewed on {{ $rejectedRequest->reviewed_at ? $rejectedRequest->reviewed_at->format('M d, Y') : 'N/A' }}
+                                </p>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
                 <!-- Skills -->
                 <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 lg:p-6">
                     <h3 class="font-semibold text-slate-800 mb-3 lg:mb-4">Skills</h3>
@@ -385,6 +494,9 @@
     </div>
 </div>
 
+<!-- Confirmation Modal for Client Conversion -->
+<x-confirmation-modal id="client-conversion-modal" />
+
 <!-- Portfolio Modal -->
 <div id="portfolio-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[999] flex items-center justify-center p-4 !my-0">
     <div class="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -434,6 +546,18 @@
 
 @push('scripts')
 <script>
+    // Client conversion request function
+    function requestClientConversion() {
+        openConfirmationModal(
+            'client-conversion-modal',
+            'Request Business Account',
+            'You will be redirected to a form where you can provide your company information to request a business account upgrade. This request will be reviewed by our administration team.',
+            function() {
+                window.location.href = '{{ route("client.request") }}';
+            }
+        );
+    }
+
     // Custom alert function
     function showAlert(type, message, title = null) {
         const alertContainer = document.getElementById('alert-container');

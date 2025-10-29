@@ -260,7 +260,14 @@ class SearchController extends Controller
             })
             ->limit(5)
             ->get()
-            ->makeVisible(['avatar', 'avatar_color']);
+            ->makeVisible(['avatar', 'avatar_color', 'role']);
+
+        // Make user role visible for posts
+        $posts->each(function ($post) {
+            if ($post->user) {
+                $post->user->makeVisible('role');
+            }
+        });
 
         return response()->json([
             'success' => true,

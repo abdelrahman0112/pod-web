@@ -4,11 +4,11 @@
 
 @section('content')
     
-<x-page-header 
+<x-page-header
     title="Hackathons"
     description="Discover coding competitions and programming challenges to showcase your skills"
-    actionUrl="{{ route('hackathons.create') }}"
-    actionText="Host Hackathon"
+    actionUrl="{{ auth()->check() && auth()->user()->canCreateHackathons() ? route('hackathons.create') : '' }}"
+    actionText="{{ auth()->check() && auth()->user()->canCreateHackathons() ? 'Host Hackathon' : '' }}"
     icon="ri-add-line"
 />
 
@@ -274,35 +274,17 @@
                     @forelse($hackathons ?? [] as $hackathon)
                         <x-cards.hackathon-card :hackathon="$hackathon" />
                     @empty
-                    <!-- Empty State -->
-                    <div class="col-span-full bg-white rounded-xl shadow-sm border border-slate-100 p-12 text-center">
-                        <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="ri-trophy-line text-2xl text-indigo-600"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-slate-800 mb-2">
-                            @if(request()->hasAny(['status', 'search', 'skill_level', 'prize_range']))
-                                No hackathons match your filters
-                            @else
-                                No hackathons found
-                            @endif
-                        </h3>
-                        <p class="text-slate-600 mb-6">
-                            @if(request()->hasAny(['category', 'status', 'search', 'skill_level', 'prize_range']))
-                                Try adjusting your filters or search terms to find more hackathons.
-                            @else
-                                There are currently no hackathons available. Check back later or create your own!
-                            @endif
-                        </p>
-                        @if(request()->hasAny(['category', 'status', 'search', 'skill_level', 'prize_range']))
-                        <div class="flex items-center justify-center">
-                            <a href="{{ route('hackathons.index') }}" 
-                               class="inline-flex items-center px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg border border-slate-300">
-                                <i class="ri-close-line mr-2"></i>
-                                Clear Filters
-                            </a>
-                        </div>
-                        @endif
-                    </div>
+                        <x-empty-search-state
+                            icon="ri-trophy-line"
+                            iconBg="from-indigo-100 to-purple-100"
+                            iconColor="text-indigo-400"
+                            :filterKeys="['category', 'status', 'search', 'skill_level', 'prize_range']"
+                            clearFiltersFunction="clearAllFilters"
+                            title="No Hackathons Found"
+                            titleFiltered="No Hackathons Match Your Filters"
+                            description="There are currently no hackathons available. Check back later for new opportunities!"
+                            descriptionFiltered="No hackathons match your current filters. Try adjusting your search criteria or clearing the filters to see more hackathons."
+                        />
                     @endforelse
                 </div>
 
@@ -367,7 +349,7 @@
                                 size="sm"
                                 :color="$organizer->avatar_color ?? null" />
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-slate-800 group-hover:text-indigo-600 transition-colors truncate">{{ $organizer->name }}</p>
+                                <p class="text-sm font-medium text-slate-800 group-hover:text-indigo-600 transition-colors truncate flex items-center">{{ $organizer->name }}<x-business-badge :user="$organizer" /></p>
                                 <p class="text-xs text-slate-500 truncate">{{ $organizer->job_title ?? 'Organizer' }}</p>
                             </div>
                             <div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
@@ -653,6 +635,27 @@
         document.addEventListener('DOMContentLoaded', function() {
             initHackathonCountdowns();
         });
+
+        function clearAllFilters() {
+            console.log('🗑️ Clearing all filters');
+            // Get the Alpine.js component instance
+            const hackathonFiltersComponent = Alpine.$data(document.querySelector('[x-data="hackathonFilters()"]'));
+            if (hackathonFiltersComponent) {
+                hackathonFiltersComponent.selectedCategory = null;
+                hackathonFiltersComponent.selectedStatus = '';
+                hackathonFiltersComponent.selectedSkillLevel = '';
+                hackathonFiltersComponent.selectedPrizeRange = '';
+                hackathonFiltersComponent.searchQuery = '';
+                
+                // Clear search input
+                const searchInput = document.querySelector('input[placeholder="Search hackathons..."]');
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+                
+                hackathonFiltersComponent.applyFilters();
+            }
+        }
     </script>
     @endpush
 @endsection

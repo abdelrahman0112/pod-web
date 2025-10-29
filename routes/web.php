@@ -137,7 +137,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/solutions', [App\Http\Controllers\SolutionsController::class, 'index'])->name('solutions.index');
 
     // Posts Management
-    Route::resource('posts', PostController::class);
+    Route::resource('posts', PostController::class)->except(['index']);
+    // Posts index route - redirect to home (posts are shown on dashboard)
+    Route::get('/posts', function () {
+        return redirect()->route('home');
+    })->name('posts.index');
     Route::post('/posts/{post}/like', [PostController::class, 'toggleLike'])->name('posts.like');
     Route::post('/posts/{post}/share', [PostController::class, 'share'])->name('posts.share');
     Route::post('/posts/{post}/vote', [PostController::class, 'vote'])->name('posts.vote');
@@ -164,9 +168,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/internships/apply', [InternshipApplicationController::class, 'store'])->name('internships.store');
 
     // Notifications
-    Route::resource('notifications', NotificationController::class)->only(['index', 'show', 'update', 'destroy']);
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notifications.show');
+    Route::patch('/notifications/{notification}', [NotificationController::class, 'update'])->name('notifications.update');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+    Route::get('/notifications/get', [NotificationController::class, 'getNotifications'])->name('notifications.get');
     Route::patch('/notifications/{notification}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::patch('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::delete('/notifications', [NotificationController::class, 'clear'])->name('notifications.clear');
+    Route::post('/notifications/preferences', [NotificationController::class, 'updatePreferences'])->name('notifications.preferences');
 
     // Search
     Route::get('/search', [SearchController::class, 'searchResults'])->name('search.results');
@@ -177,32 +190,16 @@ Route::middleware('auth')->group(function () {
     // API Routes
     Route::get('/api/users/search', [\App\Http\Controllers\Api\UserSearchController::class, 'search'])->name('api.users.search');
 
-    // Admin Routes (Legacy - moved to Filament)
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-        Route::get('/content', [AdminController::class, 'content'])->name('content');
-        Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
-        Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
-        Route::post('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
-    });
-
-    // Notifications
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
-    Route::get('/notifications/get', [NotificationController::class, 'getNotifications'])->name('notifications.get');
-    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
-    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::delete('/notifications', [NotificationController::class, 'clear'])->name('notifications.clear');
-    Route::post('/notifications/preferences', [NotificationController::class, 'updatePreferences'])->name('notifications.preferences');
 
     // Client Conversion Request
-    Route::get('/client/request', [App\Http\Controllers\ClientConversionRequestController::class, 'create'])->name('client.request');
-    Route::post('/client/request', [App\Http\Controllers\ClientConversionRequestController::class, 'store'])->name('client.request.store');
-    Route::get('/client/request/{clientConversionRequest}', [App\Http\Controllers\ClientConversionRequestController::class, 'show'])->name('client.conversion-request.show');
-    Route::get('/client/request/{clientConversionRequest}/edit', [App\Http\Controllers\ClientConversionRequestController::class, 'edit'])->name('client.conversion-request.edit');
-    Route::put('/client/request/{clientConversionRequest}', [App\Http\Controllers\ClientConversionRequestController::class, 'update'])->name('client.conversion-request.update');
-    Route::delete('/client/request/{clientConversionRequest}', [App\Http\Controllers\ClientConversionRequestController::class, 'destroy'])->name('client.conversion-request.destroy');
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/client/request', [App\Http\Controllers\ClientConversionRequestController::class, 'create'])->name('client.request');
+        Route::post('/client/request', [App\Http\Controllers\ClientConversionRequestController::class, 'store'])->name('client.request.store');
+        Route::get('/client/request/{clientConversionRequest}', [App\Http\Controllers\ClientConversionRequestController::class, 'show'])->name('client.conversion-request.show');
+        Route::get('/client/request/{clientConversionRequest}/edit', [App\Http\Controllers\ClientConversionRequestController::class, 'edit'])->name('client.conversion-request.edit');
+        Route::put('/client/request/{clientConversionRequest}', [App\Http\Controllers\ClientConversionRequestController::class, 'update'])->name('client.conversion-request.update');
+        Route::delete('/client/request/{clientConversionRequest}', [App\Http\Controllers\ClientConversionRequestController::class, 'destroy'])->name('client.conversion-request.destroy');
+    });
 
     // Client Dashboard (for users with client role)
     Route::middleware(['auth', 'role:client,superadmin,admin'])->group(function () {
@@ -214,6 +211,10 @@ Route::middleware('auth')->group(function () {
     // Admin Routes (restricted to admin/superadmin)
     Route::middleware(['auth', 'role:superadmin,admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/content', [AdminController::class, 'content'])->name('content');
+        Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
+        Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
+        Route::post('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
         // Route::resource('event-categories', App\Http\Controllers\Admin\EventCategoryController::class);
     });
 });

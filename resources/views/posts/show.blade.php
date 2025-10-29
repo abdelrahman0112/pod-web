@@ -32,7 +32,7 @@
                     <div class="flex-1 min-w-0">
                         <div class="bg-slate-100 rounded-lg p-3">
                             <div class="flex items-center space-x-2 mb-1">
-                                <h4 class="font-semibold text-sm text-slate-800">{{ $comment->user->name ?? 'Anonymous' }}</h4>
+                                <h4 class="font-semibold text-sm text-slate-800 flex items-center">{{ $comment->user->name ?? 'Anonymous' }}<x-business-badge :user="$comment->user" /></h4>
                                 <span class="text-xs text-slate-500">{{ $comment->created_at->diffForHumans() }}</span>
                             </div>
                             <p class="text-sm text-slate-700 whitespace-pre-line">{{ $comment->content }}</p>

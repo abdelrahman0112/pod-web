@@ -21,7 +21,7 @@
         
         <div class="flex-1 min-w-0">
             <div class="flex items-center space-x-2 mb-2">
-                <span class="font-medium text-slate-800">{{ $post->user->name ?? 'User' }}</span>
+                <span class="font-medium text-slate-800 flex items-center">{{ $post->user->name ?? 'User' }}<x-business-badge :user="$post->user" /></span>
                 <span class="text-sm text-slate-500">•</span>
                 <span class="text-sm text-slate-500">{{ $post->created_at->diffForHumans() }}</span>
             </div>

@@ -116,7 +116,7 @@
                                                 size="sm"
                                                 :color="$team->leader->avatar_color ?? null" />
                                             <div>
-                                                <p class="text-sm font-medium text-slate-700">{{ $team->leader->name }}</p>
+                                                <p class="text-sm font-medium text-slate-700 flex items-center">{{ $team->leader->name }}<x-business-badge :user="$team->leader" /></p>
                                                 <p class="text-xs text-slate-500">Leader</p>
                                             </div>
                                         </div>
@@ -130,7 +130,7 @@
                                                     size="sm"
                                                     :color="$member->user->avatar_color ?? null" />
                                                 <div>
-                                                    <p class="text-sm font-medium text-slate-700">{{ $member->user->name }}</p>
+                                                    <p class="text-sm font-medium text-slate-700 flex items-center">{{ $member->user->name }}<x-business-badge :user="$member->user" /></p>
                                                     <p class="text-xs text-slate-500">Member</p>
                                                 </div>
                                             </div>
@@ -186,7 +186,7 @@
                                                 size="sm"
                                                 :color="$team->leader->avatar_color ?? null" />
                                             <div>
-                                                <p class="text-sm font-medium text-slate-700">{{ $team->leader->name }}</p>
+                                                <p class="text-sm font-medium text-slate-700 flex items-center">{{ $team->leader->name }}<x-business-badge :user="$team->leader" /></p>
                                                 <p class="text-xs text-slate-500">Leader</p>
                                             </div>
                                         </div>
@@ -200,7 +200,7 @@
                                                     size="sm"
                                                     :color="$member->user->avatar_color ?? null" />
                                                 <div>
-                                                    <p class="text-sm font-medium text-slate-700">{{ $member->user->name }}</p>
+                                                    <p class="text-sm font-medium text-slate-700 flex items-center">{{ $member->user->name }}<x-business-badge :user="$member->user" /></p>
                                                     <p class="text-xs text-slate-500">Member</p>
                                                 </div>
                                             </div>
@@ -289,7 +289,7 @@
                                             size="sm"
                                             :color="$team->leader->avatar_color ?? null" />
                                         <div>
-                                            <p class="text-sm font-medium text-slate-800">{{ $team->leader->name }}</p>
+                                            <p class="text-sm font-medium text-slate-800 flex items-center">{{ $team->leader->name }}<x-business-badge :user="$team->leader" /></p>
                                             <p class="text-xs text-slate-500">{{ $team->leader->email }}</p>
                                         </div>
                                     </div>
@@ -382,7 +382,7 @@
                                             :color="$joinRequest->user->avatar_color ?? null" />
                                         <div class="flex-1">
                                             <div class="flex items-center space-x-3 mb-2">
-                                                <h4 class="font-semibold text-slate-800 text-base">{{ $joinRequest->user->name }}</h4>
+                                                <h4 class="font-semibold text-slate-800 text-base flex items-center">{{ $joinRequest->user->name }}<x-business-badge :user="$joinRequest->user" /></h4>
                                                 <span class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-semibold">
                                                     <i class="ri-user-add-line mr-1"></i>Join Request
                                                 </span>
@@ -458,7 +458,7 @@
                                             {{ $request->team->hackathon->title }}
                                         </p>
                                         <div class="flex items-center space-x-4 text-xs text-slate-500">
-                                            <span><i class="ri-user-line mr-1"></i>{{ $request->team->leader->name }}</span>
+                                            <span class="flex items-center"><i class="ri-user-line mr-1"></i>{{ $request->team->leader->name }}<x-business-badge :user="$request->team->leader" /></span>
                                             <span><i class="ri-calendar-line mr-1"></i>{{ $request->created_at->format('M d, Y') }}</span>
                                             <span>{{ $request->created_at->diffForHumans() }}</span>
                                         </div>

@@ -127,7 +127,7 @@
                 </a>
                 <div class="flex-1 min-w-0">
                     <a href="{{ route('profile.show.other', $job->poster->id) }}" class="block">
-                        <h3 class="text-base font-semibold text-slate-800">{{ $job->poster->name }}</h3>
+                        <h3 class="text-base font-semibold text-slate-800 flex items-center">{{ $job->poster->name }}<x-business-badge :user="$job->poster" /></h3>
                     </a>
                     @if($job->poster->bio)
                         <p class="text-sm text-slate-600 mt-1">{{ $job->poster->bio }}</p>

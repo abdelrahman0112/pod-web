@@ -172,7 +172,7 @@
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <div class="mb-1.5">
-                                        <div class="text-sm font-semibold text-slate-800">{{ $trendingPost->user->name ?? 'User' }}</div>
+                                        <div class="text-sm font-semibold text-slate-800 flex items-center">{{ $trendingPost->user->name ?? 'User' }}<x-business-badge :user="$trendingPost->user" /></div>
                                         <div class="text-xs text-slate-500 mt-0.5">{{ $trendingPost->created_at->diffForHumans() }}</div>
                                     </div>
                                     <p class="text-sm text-slate-700 line-clamp-2">
@@ -207,7 +207,9 @@
                                 size="sm"
                                 :color="$user->avatar_color ?? null" />
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-slate-800 group-hover:text-indigo-600 transition-colors truncate">{{ $user->name }}</p>
+                                <p class="text-sm font-medium text-slate-800 group-hover:text-indigo-600 transition-colors flex items-center">
+                                    <span class="truncate">{{ $user->name }}</span><x-business-badge :user="$user" />
+                                </p>
                                 <p class="text-xs text-slate-500 truncate">Joined {{ $user->created_at->diffForHumans() }}</p>
                             </div>
                         </a>
@@ -645,7 +647,7 @@
                     <div class="flex items-center space-x-3 flex-1">
                         ${avatarHtml}
                         <div>
-                            <h4 class="font-semibold text-slate-800">${post.user.name || 'Anonymous'}</h4>
+                            <h4 class="font-semibold text-slate-800 flex items-center">${post.user.name || 'Anonymous'}${(post.user.role === 'client' || post.user.role === 'admin' || post.user.role === 'superadmin') ? (() => { const isAdmin = post.user.role === 'admin' || post.user.role === 'superadmin'; const tooltip = isAdmin ? 'Administrator' : 'Business Account'; return `<span class="inline-flex items-center justify-center w-4 h-4 bg-emerald-500 rounded-full flex-shrink-0 ml-1.5 badge-group relative" title="${tooltip}" aria-label="${tooltip}" onclick="event.stopPropagation();" onmouseenter="event.stopPropagation();"><i class="ri-check-line text-white text-xs leading-none"></i><span class="badge-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded whitespace-nowrap transition-opacity pointer-events-none z-50">${tooltip}<span class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></span></span></span>`; })() : ''}</h4>
                             <p class="text-sm text-slate-500">${post.user.job_title || 'Member'} • 
                                 <a href="/posts/${post.id}" class="hover:text-indigo-600 transition-colors">${timeAgo}</a>
                             </p>
@@ -656,23 +658,34 @@
                 ${post.content ? `<p class="text-slate-700 mb-4">${post.content}</p>` : ''}
                 ${post.images && post.images.length > 0 ? `
                     <div class="mb-4" data-post-images='${JSON.stringify(post.images)}'>
-                        <div class="grid grid-cols-2 gap-2">
-                            ${post.images.slice(0, 4).map((image, index) => `
-                                <div class="relative w-full aspect-square cursor-pointer group" onclick="openLightbox(${post.id}, ${index})" data-post-id="${post.id}" data-image-index="${index}">
-                                    <img src="/storage/${image}" 
-                                         alt="Post image" 
-                                         class="w-full h-full object-cover group-hover:opacity-90 transition-opacity">
-                                    ${index === 3 && post.images.length > 4 ? `
-                                        <div class="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-                                            <div class="text-center text-white">
-                                                <div class="text-2xl font-bold">+${post.images.length - 4}</div>
-                                                <div class="text-sm">more photos</div>
+                        ${post.images.length === 1 ? `
+                            <div class="relative w-full rounded-lg overflow-hidden">
+                                <img src="/storage/${post.images[0]}" 
+                                     alt="Post image" 
+                                     class="w-full h-auto object-contain cursor-pointer group-hover:opacity-90 transition-opacity"
+                                     onclick="openLightbox(${post.id}, 0)"
+                                     data-post-id="${post.id}"
+                                     data-image-index="0">
+                            </div>
+                        ` : `
+                            <div class="grid grid-cols-2 gap-2">
+                                ${post.images.slice(0, 4).map((image, index) => `
+                                    <div class="relative w-full aspect-square cursor-pointer group rounded-lg overflow-hidden" onclick="openLightbox(${post.id}, ${index})" data-post-id="${post.id}" data-image-index="${index}">
+                                        <img src="/storage/${image}" 
+                                             alt="Post image" 
+                                             class="w-full h-full object-cover group-hover:opacity-90 transition-opacity">
+                                        ${index === 3 && post.images.length > 4 ? `
+                                            <div class="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+                                                <div class="text-center text-white">
+                                                    <div class="text-2xl font-bold">+${post.images.length - 4}</div>
+                                                    <div class="text-sm">more photos</div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
+                                        ` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
                     </div>
                 ` : ''}
                 ${post.hashtags && post.hashtags.length > 0 ? `
@@ -959,13 +972,26 @@
             div.dataset.commentId = comment.id;
             div.style.marginLeft = `${level * 20}px`;
             
+            const initials = (comment.user.name || 'U').substring(0, 2).toUpperCase();
+            const avatarColor = comment.user.avatar_color || 'bg-slate-100 text-slate-600';
+            const hasAvatar = comment.user.avatar && comment.user.avatar !== '' && comment.user.avatar !== 'null';
+            
             div.innerHTML = `
                 <div class="flex space-x-3">
                     <a href="/profile/${comment.user.id}" class="flex-shrink-0">
-                        <div class="w-8 h-8 ${comment.user.avatar_color || 'bg-slate-100 text-slate-600'} rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-                            <span class="font-semibold text-xs">
-                                ${(comment.user.name || 'U').substring(0, 2).toUpperCase()}
-                            </span>
+                        <div class="relative inline-flex items-center justify-center w-8 h-8 text-sm rounded-full ${avatarColor} font-medium overflow-hidden">
+                            ${hasAvatar ? `
+                                <img src="${comment.user.avatar}" alt="${comment.user.name || 'User'}" 
+                                     class="w-full h-full object-cover rounded-full"
+                                     onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="w-full h-full flex items-center justify-center rounded-full" style="display: none;">
+                                    ${initials}
+                                </div>
+                            ` : `
+                                <div class="w-full h-full flex items-center justify-center rounded-full">
+                                    ${initials}
+                                </div>
+                            `}
                         </div>
                     </a>
                     
@@ -973,7 +999,7 @@
                         <div class="bg-slate-100 rounded-lg p-3">
                             <div class="flex items-center space-x-2 mb-1">
                                 <a href="/profile/${comment.user.id}" class="hover:text-indigo-600 transition-colors">
-                                    <h4 class="font-semibold text-sm text-slate-800">${comment.user.name || 'Anonymous'}</h4>
+                                    <h4 class="font-semibold text-sm text-slate-800 flex items-center">${comment.user.name || 'Anonymous'}${(comment.user.role === 'client' || comment.user.role === 'admin' || comment.user.role === 'superadmin') ? (() => { const isAdmin = comment.user.role === 'admin' || comment.user.role === 'superadmin'; const tooltip = isAdmin ? 'Administrator' : 'Business Account'; return `<span class="inline-flex items-center justify-center w-4 h-4 bg-emerald-500 rounded-full flex-shrink-0 ml-1.5 badge-group relative" title="${tooltip}" aria-label="${tooltip}" onclick="event.stopPropagation();" onmouseenter="event.stopPropagation();"><i class="ri-check-line text-white text-xs leading-none"></i><span class="badge-tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-xs rounded whitespace-nowrap transition-opacity pointer-events-none z-50">${tooltip}<span class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900"></span></span></span>`; })() : ''}</h4>
                                 </a>
                                 <span class="text-xs text-slate-500">${this.formatDate(comment.created_at)}</span>
                             </div>

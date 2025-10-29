@@ -42,7 +42,7 @@
                             
                             <!-- Applicant Info -->
                             <div>
-                                <h3 class="text-lg font-semibold text-slate-800">{{ $application->user->name }}</h3>
+                                <h3 class="text-lg font-semibold text-slate-800 flex items-center">{{ $application->user->name }}<x-business-badge :user="$application->user" /></h3>
                                 <p class="text-slate-600">{{ $application->user->email }}</p>
                                 <p class="text-sm text-slate-500">Applied {{ $application->created_at->diffForHumans() }}</p>
                             </div>

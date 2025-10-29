@@ -14,34 +14,12 @@ class PostController extends Controller
 
     /**
      * Display a listing of the resource.
+     * Note: This method is not used - the route redirects to home.
+     * Posts are displayed on the dashboard instead.
      */
     public function index(Request $request)
     {
-        $query = Post::with(['user'])
-            ->published()
-            ->latest();
-
-        // Apply filters
-        if ($request->filled('type')) {
-            $query->ofType($request->type);
-        }
-
-        if ($request->filled('search')) {
-            $query->search($request->search);
-        }
-
-        if ($request->filled('featured')) {
-            $query->featured();
-        }
-
-        // Filter by hashtag
-        if ($request->filled('hashtag')) {
-            $query->whereJsonContains('hashtags', $request->hashtag);
-        }
-
-        $posts = $query->paginate(15);
-
-        return view('posts.index', compact('posts'));
+        return redirect()->route('home');
     }
 
     /**
@@ -125,6 +103,11 @@ class PostController extends Controller
             $post = Post::create($validated);
             $post->load('user');
 
+            // Ensure user role is visible for business badge in JavaScript
+            if ($post->user) {
+                $post->user->makeVisible('role');
+            }
+
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => true,
@@ -133,7 +116,7 @@ class PostController extends Controller
                 ]);
             }
 
-            return redirect()->route('posts.index')
+            return redirect()->route('home')
                 ->with('success', 'Post created successfully!');
         } catch (\Exception $e) {
             if ($request->ajax() || $request->wantsJson()) {
@@ -324,7 +307,7 @@ class PostController extends Controller
 
         $post->delete();
 
-        return redirect()->route('posts.index')
+        return redirect()->route('home')
             ->with('success', 'Post deleted successfully!');
     }
 

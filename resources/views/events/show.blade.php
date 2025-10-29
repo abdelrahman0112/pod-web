@@ -128,7 +128,7 @@
                     size="md"
                     :color="$event->creator->avatar_color ?? null" />
                 <div>
-                    <h3 class="text-lg font-medium text-slate-800">{{ $event->creator->name }}</h3>
+                    <h3 class="text-lg font-medium text-slate-800 flex items-center">{{ $event->creator->name }}<x-business-badge :user="$event->creator" /></h3>
                     <p class="text-slate-600">Event Organizer</p>
                     @if($event->creator->bio)
                         <p class="text-sm text-slate-500 mt-2">{{ Str::limit($event->creator->bio, 150) }}</p>

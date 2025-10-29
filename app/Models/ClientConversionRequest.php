@@ -12,7 +12,6 @@ class ClientConversionRequest extends Model
         'company_name',
         'business_field',
         'company_website',
-        'business_registration_info',
         'linkedin_company_page',
         'additional_info',
         'status',

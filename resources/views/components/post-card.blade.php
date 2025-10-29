@@ -15,8 +15,9 @@
                     :color="$post->user->avatar_color ?? null" />
             </a>
             <div>
-                <a href="{{ route('profile.show.other', $post->user->id) }}" class="hover:text-indigo-600 transition-colors">
+                <a href="{{ route('profile.show.other', $post->user->id) }}" class="hover:text-indigo-600 transition-colors flex items-center">
                     <h4 class="font-semibold text-slate-800">{{ $post->user->name ?? 'Anonymous' }}</h4>
+                    <x-business-badge :user="$post->user" />
                 </a>
             <p class="text-sm text-slate-500">{{ $post->user->job_title ?? 'Member' }} • 
                 <a href="{{ route('posts.show', $post) }}" class="hover:text-indigo-600 transition-colors">{{ $post->created_at->diffForHumans() }}</a>
@@ -75,7 +76,7 @@
     @if($post->hashtags && count($post->hashtags) > 0)
         <div class="flex flex-wrap gap-2 mb-4">
             @foreach($post->hashtags as $hashtag)
-                <a href="{{ route('posts.index', ['hashtag' => $hashtag]) }}" class="bg-indigo-100 text-indigo-600 hover:bg-indigo-200 hover:text-indigo-700 px-2 py-1 rounded-full text-xs transition-colors">{{ $hashtag }}</a>
+                <span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full text-xs">{{ $hashtag }}</span>
             @endforeach
         </div>
     @endif

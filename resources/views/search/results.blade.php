@@ -41,7 +41,7 @@
                                 size="md"
                                 :color="$user->avatar_color ?? null" />
                             <div class="flex-1 min-w-0">
-                                <div class="font-semibold text-slate-800">{{ $user->name ?? 'User' }}</div>
+                                <div class="font-semibold text-slate-800 flex items-center">{{ $user->name ?? 'User' }}<x-business-badge :user="$user" /></div>
                                 @if($user->title)
                                     <div class="text-sm text-slate-600">{{ $user->title }}</div>
                                 @endif

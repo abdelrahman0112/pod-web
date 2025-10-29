@@ -28,8 +28,8 @@
                        class="navbar-link {{ request()->routeIs('hackathons.*') ? 'active' : '' }}">
                         Hackathons
                     </a>
-                    <a href="{{ route('posts.index') }}" 
-                       class="navbar-link {{ request()->routeIs('posts.*') ? 'active' : '' }}">
+                    <a href="{{ route('home') }}" 
+                       class="navbar-link {{ request()->routeIs('home') ? 'active' : '' }}">
                         Posts
                     </a>
                 </div>
@@ -154,10 +154,6 @@
                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 Messages
                             </a>
-                            <a href="{{ route('ai.assistant') }}" 
-                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                AI Assistant
-                            </a>
                             <div class="border-t border-gray-200"></div>
                             <form method="POST" action="{{ route('logout') }}" class="block">
                                 @csrf
@@ -215,8 +211,8 @@
                class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium {{ request()->routeIs('hackathons.*') ? 'border-primary-500 text-primary-700 bg-primary-50' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300' }}">
                 Hackathons
             </a>
-            <a href="{{ route('posts.index') }}" 
-               class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium {{ request()->routeIs('posts.*') ? 'border-primary-500 text-primary-700 bg-primary-50' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300' }}">
+            <a href="{{ route('home') }}" 
+               class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium {{ request()->routeIs('home') ? 'border-primary-500 text-primary-700 bg-primary-50' : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300' }}">
                 Posts
             </a>
             <a href="{{ route('chatify') }}" 
@@ -253,10 +249,6 @@
                     <a href="{{ route('chatify') }}" 
                        class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
                         Messages
-                    </a>
-                    <a href="{{ route('ai.assistant') }}" 
-                       class="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
-                        AI Assistant
                     </a>
                     <form method="POST" action="{{ route('logout') }}" class="block">
                         @csrf

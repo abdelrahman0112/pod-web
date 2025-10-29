@@ -28,9 +28,8 @@ class JobListingPolicy
      */
     public function create(User $user): bool
     {
-        // Allow all authenticated users to create job listings
-        // In the future, you might want to add role-based restrictions
-        return true;
+        // Allow superadmin, admin, and client roles to create job listings
+        return in_array($user->role, ['superadmin', 'admin', 'client']);
     }
 
     /**
