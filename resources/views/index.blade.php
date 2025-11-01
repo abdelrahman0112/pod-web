@@ -1973,7 +1973,28 @@
             }, 300);
         });
     </script>
-
+    
+    <!-- Back to Top Button -->
+    <div id="back-to-top" class="fixed bottom-4 right-4 z-50 opacity-0 pointer-events-none transition-all duration-300 ease-in-out translate-y-12">
+        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" 
+                class="bg-white text-slate-700 w-10 h-10 flex items-center justify-center rounded-full shadow-lg hover:bg-slate-50 transition-colors duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+            <i class="ri-arrow-up-line text-lg"></i>
+        </button>
+    </div>
+    
+    <script>
+        // Show/hide back to top button based on scroll position
+        window.addEventListener('scroll', function() {
+            const backToTopButton = document.getElementById('back-to-top');
+            if (window.scrollY > 400) {
+                backToTopButton.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-12');
+                backToTopButton.classList.add('opacity-100', 'translate-y-0');
+            } else {
+                backToTopButton.classList.add('opacity-0', 'pointer-events-none', 'translate-y-12');
+                backToTopButton.classList.remove('opacity-100', 'translate-y-0');
+            }
+        });
+    </script>
 </body>
 
 </html>
