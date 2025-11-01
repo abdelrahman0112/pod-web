@@ -66,11 +66,7 @@
 @elseif(auth()->check())
 <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
     <h3 class="font-semibold text-slate-800 mb-2">My Upcoming Events</h3>
-    <p class="text-sm text-slate-600 mb-4">You're not registered for any upcoming events yet.</p>
-    <a href="{{ route('events.index') }}" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-        Browse Events
-        <i class="ri-arrow-right-line ml-1"></i>
-    </a>
+    <p class="text-sm text-slate-500 text-center py-4">You're not registered for any upcoming events yet.</p>
 </div>
 @endif
 
