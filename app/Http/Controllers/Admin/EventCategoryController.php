@@ -34,7 +34,6 @@ class EventCategoryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:event_categories',
             'color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'description' => 'nullable|string',
         ]);
 
         EventCategory::create($validated);
@@ -67,7 +66,6 @@ class EventCategoryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:event_categories,name,'.$eventCategory->id,
             'color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'description' => 'nullable|string',
         ]);
 
         $eventCategory->update($validated);

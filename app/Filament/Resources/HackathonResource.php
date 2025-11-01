@@ -39,11 +39,9 @@ class HackathonResource extends Resource
                             ->maxLength(255),
                         Forms\Components\Textarea::make('description')
                             ->required()
-                            ->rows(3),
-                        Forms\Components\TextInput::make('location')
-                            ->required()
-                            ->maxLength(255),
-                    ])->columns(2),
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ])->columns(1),
 
                 Forms\Components\Section::make('Schedule')
                     ->schema([
@@ -80,25 +78,38 @@ class HackathonResource extends Resource
                             ->numeric()
                             ->prefix('$')
                             ->minValue(0),
-                        Forms\Components\TextInput::make('entry_fee')
-                            ->numeric()
-                            ->prefix('$')
-                            ->minValue(0)
-                            ->default(0),
+                    ]),
+
+                Forms\Components\Section::make('Location & Format')
+                    ->schema([
+                        Forms\Components\Select::make('format')
+                            ->label('Format')
+                            ->options(collect(HackathonFormat::cases())->mapWithKeys(fn ($case) => [$case->value => $case->getLabel()]))
+                            ->required()
+                            ->reactive()
+                            ->live(),
+                        Forms\Components\TextInput::make('location')
+                            ->label('Location')
+                            ->maxLength(255)
+                            ->required(fn (Forms\Get $get) => $get('format') !== 'online')
+                            ->helperText('Required for on-site and hybrid events. Optional for online events.'),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Technical Details')
                     ->schema([
-                        Forms\Components\Select::make('format')
-                            ->options(collect(HackathonFormat::cases())->mapWithKeys(fn ($case) => [$case->value => $case->getLabel()]))
-                            ->required(),
                         Forms\Components\Select::make('skill_requirements')
+                            ->label('Skill Level')
                             ->options(collect(SkillLevel::cases())->mapWithKeys(fn ($case) => [$case->value => $case->getLabel()]))
-                            ->required(),
-                        Forms\Components\TextInput::make('technologies')
-                            ->placeholder('e.g. Python, React, AI/ML')
-                            ->helperText('Separate technologies with commas'),
+                            ->nullable(),
+                        Forms\Components\TagsInput::make('technologies')
+                            ->label('Technologies & Tools')
+                            ->placeholder('Add a technology (e.g. React, Python, AWS, Docker)')
+                            ->helperText('Add technologies and tools used in this hackathon')
+                            ->separator(',')
+                            ->splitKeys(['Tab', ','])
+                            ->columnSpanFull(),
                         Forms\Components\Textarea::make('rules')
+                            ->label('Rules & Guidelines')
                             ->rows(3),
                     ])->columns(2),
 
@@ -110,11 +121,12 @@ class HackathonResource extends Resource
                             ->directory('hackathons')
                             ->maxSize(2048)
                             ->columnSpanFull(),
-                        Forms\Components\Select::make('sponsor_id')
-                            ->label('Sponsor')
-                            ->relationship('sponsor', 'name')
+                        Forms\Components\Select::make('created_by')
+                            ->label('Organizer')
+                            ->relationship('creator', 'name')
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->required(),
                         Forms\Components\Toggle::make('is_active')
                             ->default(true),
                     ])->columns(2),
@@ -132,6 +144,10 @@ class HackathonResource extends Resource
                     ->label('Organizer')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('location')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('Online'),
                 Tables\Columns\TextColumn::make('format')
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state->getLabel())
@@ -191,5 +207,23 @@ class HackathonResource extends Resource
             'create' => Pages\CreateHackathon::route('/create'),
             'edit' => Pages\EditHackathon::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Determine whether the user can view any models.
+     */
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        return $user && ($user->isAdmin() || $user->isClient());
     }
 }

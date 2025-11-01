@@ -50,18 +50,24 @@
                         
                         <!-- Application Status -->
                         <div class="flex items-center space-x-3">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                @if($application->status === 'pending') bg-yellow-100 text-yellow-800
-                                @elseif($application->status === 'reviewed') bg-blue-100 text-blue-800
-                                @elseif($application->status === 'accepted') bg-green-100 text-green-800
-                                @elseif($application->status === 'rejected') bg-red-100 text-red-800
-                                @else bg-gray-100 text-gray-800 @endif">
-                                {{ ucfirst($application->status) }}
+                            @php
+                                $statusValue = $application->status->value;
+                                $statusLabel = $application->status->getLabel();
+                                $statusClass = match($statusValue) {
+                                    'pending' => 'bg-yellow-100 text-yellow-800',
+                                    'reviewed' => 'bg-blue-100 text-blue-800',
+                                    'accepted' => 'bg-green-100 text-green-800',
+                                    'rejected' => 'bg-red-100 text-red-800',
+                                    default => 'bg-gray-100 text-gray-800',
+                                };
+                            @endphp
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusClass }}">
+                                {{ $statusLabel }}
                             </span>
                             
                             <!-- Status Actions -->
                             <div class="flex items-center space-x-2">
-                                @if($application->status === 'pending')
+                                @if($application->status === \App\JobApplicationStatus::PENDING)
                                     <form action="{{ route('jobs.applications.review', $application) }}" method="POST" class="inline">
                                         @csrf
                                         @method('PATCH')
@@ -74,7 +80,7 @@
                                     </form>
                                 @endif
                                 
-                                @if($application->status === 'reviewed')
+                                @if($application->status === \App\JobApplicationStatus::REVIEWED)
                                     <div class="flex space-x-2">
                                         <button type="button"
                                                 onclick="openConfirmAcceptModal({{ $application->id }})"

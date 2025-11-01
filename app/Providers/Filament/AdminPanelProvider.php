@@ -10,7 +10,6 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -40,6 +39,7 @@ class AdminPanelProvider extends PanelProvider
                 \App\Filament\Widgets\StatsOverview::class,
                 \App\Filament\Widgets\QuickActions::class,
                 \App\Filament\Widgets\UserRegistrationsChart::class,
+                \App\Filament\Widgets\PostEngagementChart::class,
                 \App\Filament\Widgets\RecentInternshipApplications::class,
                 \App\Filament\Widgets\RecentJobApplicationsPending::class,
                 \App\Filament\Widgets\RecentEventRegistrations::class,

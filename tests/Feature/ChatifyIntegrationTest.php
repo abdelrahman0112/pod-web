@@ -10,14 +10,14 @@ class ChatifyIntegrationTest extends TestCase
     {
         $routes = collect(\Illuminate\Support\Facades\Route::getRoutes())->map(fn ($route) => $route->uri());
 
-        $this->assertTrue($routes->contains('chatify'));
-        $this->assertTrue($routes->contains('chatify/{id}'));
-        $this->assertTrue($routes->contains('chatify/api/sendMessage'));
+        $this->assertTrue($routes->contains('chat'), 'Route "chat" not found');
+        $this->assertTrue($routes->contains('chat/{id}'), 'Route "chat/{id}" not found');
+        $this->assertTrue($routes->contains('chat/api/sendMessage'), 'Route "chat/api/sendMessage" not found');
     }
 
     public function test_guest_user_cannot_access_chatify(): void
     {
-        $response = $this->get('/chatify');
+        $response = $this->get('/chat');
 
         $response->assertRedirect(route('login'));
     }

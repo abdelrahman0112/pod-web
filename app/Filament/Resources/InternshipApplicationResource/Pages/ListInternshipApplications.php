@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\InternshipApplicationResource\Pages;
 
 use App\Filament\Resources\InternshipApplicationResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListInternshipApplications extends ListRecords

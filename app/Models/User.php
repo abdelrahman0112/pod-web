@@ -58,6 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_active',
         'role',
         'active_status',
+        'fcm_token',
     ];
 
     /**
@@ -302,6 +303,15 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Check if user can access Filament admin panel.
+     */
+    public function canAccessPanel(\Filament\Panel $panel): bool
+    {
+        // Only superadmin and admin can access Filament panel
+        return $this->isAdmin();
+    }
+
+    /**
      * Get the user's client conversion requests.
      */
     public function clientConversionRequests()
@@ -372,5 +382,17 @@ class User extends Authenticatable implements MustVerifyEmail
     public function newsletterSubscription()
     {
         return $this->hasOne(NewsletterSubscription::class);
+    }
+
+    /**
+     * Get the user's notification preferences.
+     */
+    public function notificationPreferences()
+    {
+        return $this->hasOne(UserNotificationPreference::class)->withDefault([
+            'email_notifications' => true,
+            'push_notifications' => true,
+            'in_app_notifications' => true,
+        ]);
     }
 }

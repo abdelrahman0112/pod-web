@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Alpine.js cloak - hide elements until Alpine is initialized */
+[x-cloak] { display: none !important; }
+
 .btn-primary {
     @apply bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors;
 }

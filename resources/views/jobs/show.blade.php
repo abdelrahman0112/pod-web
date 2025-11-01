@@ -180,21 +180,32 @@
                             <!-- Application Status -->
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-slate-600">Status:</span>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                    @if($userApplication->status === 'pending') bg-yellow-100 text-yellow-800
-                                    @elseif($userApplication->status === 'reviewed') bg-blue-100 text-blue-800
-                                    @elseif($userApplication->status === 'accepted') bg-green-100 text-green-800
-                                    @elseif($userApplication->status === 'rejected') bg-red-100 text-red-800
-                                    @else bg-gray-100 text-gray-800 @endif">
-                                    {{ ucfirst($userApplication->status) }}
+                                @php
+                                    $statusValue = $userApplication->status->value;
+                                    $statusLabel = $userApplication->status->getLabel();
+                                    $statusClass = match($statusValue) {
+                                        'pending' => 'bg-yellow-100 text-yellow-800',
+                                        'reviewed' => 'bg-blue-100 text-blue-800',
+                                        'accepted' => 'bg-green-100 text-green-800',
+                                        'rejected' => 'bg-red-100 text-red-800',
+                                        default => 'bg-gray-100 text-gray-800',
+                                    };
+                                @endphp
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $statusClass }}">
+                                    {{ $statusLabel }}
                                 </span>
                             </div>
                         </div>
                         
-                        <a href="{{ route('jobs.applications', $job) }}" 
-                           class="w-full bg-slate-100 text-slate-700 px-4 py-3 rounded-button hover:bg-slate-200 transition-colors !rounded-button text-center block">
-                            View Application
-                        </a>
+                        @php
+                            $userApplication = $job->getUserApplication(Auth::user());
+                        @endphp
+                        @if($userApplication)
+                            <a href="{{ route('jobs.my-application.show', $userApplication) }}" 
+                               class="w-full bg-slate-100 text-slate-700 px-4 py-3 rounded-button hover:bg-slate-200 transition-colors !rounded-button text-center block">
+                                View Application
+                            </a>
+                        @endif
                     @else
                         <div class="mb-4">
                             <div class="text-sm text-slate-600 mb-2">Application Deadline</div>
@@ -272,12 +283,19 @@
                                     <p class="text-sm font-medium text-slate-800 truncate group-hover:text-indigo-600 transition-colors">{{ $application->user->name }}</p>
                                     <p class="text-xs text-slate-500">{{ $application->created_at->diffForHumans() }}</p>
                                 </div>
-                                <span class="flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium
-                                    @if($application->status === 'pending') bg-yellow-100 text-yellow-700
-                                    @elseif($application->status === 'reviewed') bg-blue-100 text-blue-700
-                                    @elseif($application->status === 'accepted') bg-green-100 text-green-700
-                                    @else bg-red-100 text-red-700 @endif">
-                                    {{ ucfirst($application->status) }}
+                                @php
+                                    $appStatusValue = $application->status->value;
+                                    $appStatusLabel = $application->status->getLabel();
+                                    $appStatusClass = match($appStatusValue) {
+                                        'pending' => 'bg-yellow-100 text-yellow-700',
+                                        'reviewed' => 'bg-blue-100 text-blue-700',
+                                        'accepted' => 'bg-green-100 text-green-700',
+                                        'rejected' => 'bg-red-100 text-red-700',
+                                        default => 'bg-gray-100 text-gray-700',
+                                    };
+                                @endphp
+                                <span class="flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium {{ $appStatusClass }}">
+                                    {{ $appStatusLabel }}
                                 </span>
                             </a>
                         @endforeach
@@ -331,6 +349,46 @@
                 </button>
             </div>
             
+            @if(session('success'))
+                <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="ri-check-line text-green-600 mr-2"></i>
+                        <span class="text-sm text-green-700">{{ session('success') }}</span>
+                    </div>
+                </div>
+                <script>
+                    setTimeout(function() {
+                        hideApplicationModal();
+                        window.location.reload();
+                    }, 2000);
+                </script>
+            @endif
+            
+            @if($errors->any())
+                <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="ri-error-warning-line text-red-600 mr-2 mt-0.5"></i>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-red-800 mb-1">Error submitting application</h4>
+                            <ul class="text-sm text-red-700 list-disc list-inside">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            @endif
+            
+            @if(session('error'))
+                <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="ri-error-warning-line text-red-600 mr-2"></i>
+                        <span class="text-sm text-red-700">{{ session('error') }}</span>
+                    </div>
+                </div>
+            @endif
+            
             <form action="{{ route('jobs.apply', $job) }}" method="POST">
                 @csrf
                 <div class="space-y-4">
@@ -338,16 +396,19 @@
                         <label class="block text-sm font-medium text-slate-700 mb-2">Cover Letter *</label>
                         <textarea name="cover_letter" 
                                   rows="4" 
-                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                  class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('cover_letter') border-red-300 @enderror"
                                   placeholder="Tell us why you're interested in this position..."
-                                  required></textarea>
+                                  required>{{ old('cover_letter') }}</textarea>
+                        @error('cover_letter')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-2">Additional Information</label>
                         <textarea name="additional_info" 
                                   rows="3" 
                                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                  placeholder="Any additional information you'd like to share..."></textarea>
+                                  placeholder="Any additional information you'd like to share...">{{ old('additional_info') }}</textarea>
                     </div>
                 </div>
                 

@@ -122,6 +122,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile/portfolios/{id}', [ProfileController::class, 'deletePortfolio'])->name('portfolio.delete');
 
     // Job Listings
+    // Put specific routes BEFORE resource route to avoid conflicts
+    Route::get('/jobs/my-applications', [JobListingController::class, 'myApplications'])->name('jobs.my-applications');
+    Route::get('/jobs/my-applications/{application}', [JobListingController::class, 'showMyApplication'])->name('jobs.my-application.show');
     Route::resource('jobs', JobListingController::class);
     Route::post('/jobs/{job}/apply', [JobListingController::class, 'apply'])->name('jobs.apply');
     Route::patch('/jobs/{job}/close', [JobListingController::class, 'close'])->name('jobs.close');
@@ -180,17 +183,14 @@ Route::middleware('auth')->group(function () {
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notifications.show');
-    Route::patch('/notifications/{notification}', [NotificationController::class, 'update'])->name('notifications.update');
-    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
     Route::get('/notifications/get', [NotificationController::class, 'getNotifications'])->name('notifications.get');
-    Route::patch('/notifications/{notification}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
-    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::patch('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
+    Route::post('/notifications/view-all', [NotificationController::class, 'markAllAsViewed'])->name('notifications.view-all');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
     Route::delete('/notifications', [NotificationController::class, 'clear'])->name('notifications.clear');
     Route::post('/notifications/preferences', [NotificationController::class, 'updatePreferences'])->name('notifications.preferences');
+    Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::delete('/notifications/{notificationId}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
     // Search
     Route::get('/search', [SearchController::class, 'searchResults'])->name('search.results');

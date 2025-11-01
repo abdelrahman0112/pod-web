@@ -38,13 +38,13 @@ class AdminController extends Controller
      */
     private function userCanAccessAdmin($user): bool
     {
-        // Check if user has admin role (if role system is implemented)
-        if (method_exists($user, 'hasRole')) {
-            return $user->hasRole(['admin', 'super_admin']);
+        // Use the User model's isAdmin method which checks for superadmin and admin
+        if (method_exists($user, 'isAdmin')) {
+            return $user->isAdmin();
         }
 
         // Check if user has a role attribute
-        if (isset($user->role) && in_array($user->role, ['admin', 'super_admin'])) {
+        if (isset($user->role) && in_array($user->role, ['admin', 'superadmin'])) {
             return true;
         }
 
@@ -96,7 +96,7 @@ class AdminController extends Controller
         $totalHackathons = Hackathon::count();
         $activeHackathons = Hackathon::where('is_active', true)->count();
 
-        $pendingApplications = JobApplication::where('status', 'pending')->count();
+        $pendingApplications = JobApplication::where('status', \App\JobApplicationStatus::PENDING)->count();
         $eventRegistrations = EventRegistration::where('status', 'confirmed')->count();
 
         return [

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\InternshipApplicationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,6 +26,9 @@ class InternshipApplication extends Model
         'availability_end',
         'motivation',
         'status',
+        'admin_response',
+        'admin_notes',
+        'admin_id',
     ];
 
     protected function casts(): array
@@ -33,6 +37,7 @@ class InternshipApplication extends Model
             'interest_categories' => 'array',
             'availability_start' => 'date',
             'availability_end' => 'date',
+            'status' => InternshipApplicationStatus::class,
         ];
     }
 
@@ -51,27 +56,24 @@ class InternshipApplication extends Model
         return $this->belongsTo(\App\Models\Internship::class);
     }
 
+    public function admin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'admin_id');
+    }
+
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            'pending' => 'yellow',
-            'under_review' => 'blue',
-            'accepted' => 'green',
-            'rejected' => 'red',
-            'withdrawn' => 'gray',
+            InternshipApplicationStatus::PENDING => 'yellow',
+            InternshipApplicationStatus::REVIEWED => 'blue',
+            InternshipApplicationStatus::ACCEPTED => 'green',
+            InternshipApplicationStatus::REJECTED => 'red',
             default => 'gray',
         };
     }
 
     public function getStatusDisplayAttribute(): string
     {
-        return match ($this->status) {
-            'pending' => 'Pending Review',
-            'under_review' => 'Under Review',
-            'accepted' => 'Accepted',
-            'rejected' => 'Rejected',
-            'withdrawn' => 'Withdrawn',
-            default => 'Unknown',
-        };
+        return $this->status?->getLabel() ?? 'Unknown';
     }
 }

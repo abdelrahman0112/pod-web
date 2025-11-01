@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\JobApplicationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -22,6 +23,7 @@ class JobApplication extends Model
     protected $casts = [
         'additional_info' => 'array',
         'status_updated_at' => 'datetime',
+        'status' => JobApplicationStatus::class,
     ];
 
     /**
@@ -60,7 +62,7 @@ class JobApplication extends Model
      */
     public function isPending(): bool
     {
-        return $this->status === 'pending';
+        return $this->status === JobApplicationStatus::PENDING;
     }
 
     /**
@@ -68,23 +70,7 @@ class JobApplication extends Model
      */
     public function isReviewed(): bool
     {
-        return $this->status === 'reviewed';
-    }
-
-    /**
-     * Check if interview is scheduled.
-     */
-    public function hasInterviewScheduled(): bool
-    {
-        return $this->status === 'interview_scheduled';
-    }
-
-    /**
-     * Check if user has been interviewed.
-     */
-    public function isInterviewed(): bool
-    {
-        return $this->status === 'interviewed';
+        return $this->status === JobApplicationStatus::REVIEWED;
     }
 
     /**
@@ -92,7 +78,7 @@ class JobApplication extends Model
      */
     public function isAccepted(): bool
     {
-        return $this->status === 'accepted';
+        return $this->status === JobApplicationStatus::ACCEPTED;
     }
 
     /**
@@ -100,15 +86,7 @@ class JobApplication extends Model
      */
     public function isRejected(): bool
     {
-        return $this->status === 'rejected';
-    }
-
-    /**
-     * Check if application is withdrawn.
-     */
-    public function isWithdrawn(): bool
-    {
-        return $this->status === 'withdrawn';
+        return $this->status === JobApplicationStatus::REJECTED;
     }
 
     /**
@@ -117,29 +95,7 @@ class JobApplication extends Model
     public function markAsReviewed(?string $adminNotes = null): void
     {
         $this->update([
-            'status' => 'reviewed',
-            'admin_notes' => $adminNotes ?: $this->admin_notes,
-        ]);
-    }
-
-    /**
-     * Schedule interview for this application.
-     */
-    public function scheduleInterview(?string $adminNotes = null): void
-    {
-        $this->update([
-            'status' => 'interview_scheduled',
-            'admin_notes' => $adminNotes ?: $this->admin_notes,
-        ]);
-    }
-
-    /**
-     * Mark as interviewed.
-     */
-    public function markAsInterviewed(?string $adminNotes = null): void
-    {
-        $this->update([
-            'status' => 'interviewed',
+            'status' => JobApplicationStatus::REVIEWED,
             'admin_notes' => $adminNotes ?: $this->admin_notes,
         ]);
     }
@@ -150,7 +106,7 @@ class JobApplication extends Model
     public function accept(?string $adminNotes = null): void
     {
         $this->update([
-            'status' => 'accepted',
+            'status' => JobApplicationStatus::ACCEPTED,
             'admin_notes' => $adminNotes ?: $this->admin_notes,
         ]);
     }
@@ -161,17 +117,9 @@ class JobApplication extends Model
     public function reject(?string $adminNotes = null): void
     {
         $this->update([
-            'status' => 'rejected',
+            'status' => JobApplicationStatus::REJECTED,
             'admin_notes' => $adminNotes ?: $this->admin_notes,
         ]);
-    }
-
-    /**
-     * Withdraw this application.
-     */
-    public function withdraw(): void
-    {
-        $this->update(['status' => 'withdrawn']);
     }
 
     /**
@@ -180,13 +128,10 @@ class JobApplication extends Model
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            'pending' => 'yellow',
-            'reviewed' => 'blue',
-            'interview_scheduled' => 'purple',
-            'interviewed' => 'indigo',
-            'accepted' => 'green',
-            'rejected' => 'red',
-            'withdrawn' => 'gray',
+            JobApplicationStatus::PENDING => 'yellow',
+            JobApplicationStatus::REVIEWED => 'blue',
+            JobApplicationStatus::ACCEPTED => 'green',
+            JobApplicationStatus::REJECTED => 'red',
             default => 'gray',
         };
     }
@@ -196,16 +141,7 @@ class JobApplication extends Model
      */
     public function getStatusDisplayAttribute(): string
     {
-        return match ($this->status) {
-            'pending' => 'Pending Review',
-            'reviewed' => 'Reviewed',
-            'interview_scheduled' => 'Interview Scheduled',
-            'interviewed' => 'Interviewed',
-            'accepted' => 'Accepted',
-            'rejected' => 'Rejected',
-            'withdrawn' => 'Withdrawn',
-            default => ucfirst(str_replace('_', ' ', $this->status)),
-        };
+        return $this->status?->getLabel() ?? 'Unknown';
     }
 
     /**
@@ -214,13 +150,10 @@ class JobApplication extends Model
     public function getStatusIconAttribute(): string
     {
         return match ($this->status) {
-            'pending' => 'clock',
-            'reviewed' => 'eye',
-            'interview_scheduled' => 'calendar',
-            'interviewed' => 'user-check',
-            'accepted' => 'check-circle',
-            'rejected' => 'x-circle',
-            'withdrawn' => 'arrow-left',
+            JobApplicationStatus::PENDING => 'clock',
+            JobApplicationStatus::REVIEWED => 'eye',
+            JobApplicationStatus::ACCEPTED => 'check-circle',
+            JobApplicationStatus::REJECTED => 'x-circle',
             default => 'help-circle',
         };
     }
@@ -228,9 +161,11 @@ class JobApplication extends Model
     /**
      * Scope for applications by status.
      */
-    public function scopeWithStatus($query, string $status)
+    public function scopeWithStatus($query, JobApplicationStatus|string $status)
     {
-        return $query->where('status', $status);
+        $statusValue = $status instanceof JobApplicationStatus ? $status->value : $status;
+
+        return $query->where('status', $statusValue);
     }
 
     /**
@@ -238,7 +173,7 @@ class JobApplication extends Model
      */
     public function scopePending($query)
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', JobApplicationStatus::PENDING);
     }
 
     /**
@@ -246,7 +181,7 @@ class JobApplication extends Model
      */
     public function scopeReviewed($query)
     {
-        return $query->where('status', 'reviewed');
+        return $query->where('status', JobApplicationStatus::REVIEWED);
     }
 
     /**
@@ -254,7 +189,7 @@ class JobApplication extends Model
      */
     public function scopeAccepted($query)
     {
-        return $query->where('status', 'accepted');
+        return $query->where('status', JobApplicationStatus::ACCEPTED);
     }
 
     /**
@@ -262,7 +197,7 @@ class JobApplication extends Model
      */
     public function scopeRejected($query)
     {
-        return $query->where('status', 'rejected');
+        return $query->where('status', JobApplicationStatus::REJECTED);
     }
 
     /**

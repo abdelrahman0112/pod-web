@@ -100,7 +100,17 @@ class JobListingController extends Controller
         $experienceLevels = ExperienceLevel::options();
         $locationTypes = LocationType::options();
 
-        return view('jobs.index', compact('jobs', 'categories', 'experienceLevels', 'locationTypes'));
+        // Get user's job applications if authenticated
+        $userApplications = collect();
+        if (Auth::check()) {
+            $userApplications = JobApplication::with(['jobListing:id,title,company_name'])
+                ->where('user_id', Auth::id())
+                ->latest()
+                ->limit(5)
+                ->get();
+        }
+
+        return view('jobs.index', compact('jobs', 'categories', 'experienceLevels', 'locationTypes', 'userApplications'));
     }
 
     /**
@@ -233,9 +243,29 @@ class JobListingController extends Controller
      */
     public function apply(Request $request, JobListing $job)
     {
+        \Log::info('Job application attempt', [
+            'user_id' => Auth::id(),
+            'job_id' => $job->id,
+            'can_apply' => $job->canUserApply(Auth::user()),
+        ]);
+
         if (! $job->canUserApply(Auth::user())) {
+            $reason = 'Unknown reason';
+            if (! $job->isAcceptingApplications()) {
+                if ($job->status !== \App\JobStatus::ACTIVE->value) {
+                    $reason = 'Job is not active';
+                } elseif ($job->hasDeadlinePassed()) {
+                    $reason = 'Application deadline has passed';
+                } else {
+                    $reason = 'Job is not accepting applications';
+                }
+            } elseif ($job->applications()->where('user_id', Auth::id())->exists()) {
+                $reason = 'You have already applied for this job';
+            }
+
             return redirect()->back()
-                ->with('error', 'You cannot apply for this job.');
+                ->withErrors(['error' => 'You cannot apply for this job. '.$reason])
+                ->withInput();
         }
 
         $validated = $request->validate([
@@ -243,10 +273,49 @@ class JobListingController extends Controller
             'additional_info' => 'nullable|string|max:1000',
         ]);
 
-        $job->applyForJob(Auth::user(), $validated);
+        \Log::info('Validation passed', ['validated' => $validated]);
 
-        return redirect()->route('jobs.show', $job)
-            ->with('success', 'Application submitted successfully!');
+        try {
+            $application = $job->applyForJob(Auth::user(), $validated);
+
+            \Log::info('Application created successfully', [
+                'application_id' => $application->id,
+                'status' => $application->status->value ?? 'unknown',
+            ]);
+
+            return redirect()->route('jobs.show', $job)
+                ->with('success', 'Application submitted successfully!');
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('Job application database error', [
+                'user_id' => Auth::id(),
+                'job_id' => $job->id,
+                'error' => $e->getMessage(),
+                'sql' => $e->getSql(),
+                'bindings' => $e->getBindings(),
+            ]);
+
+            // Check if it's a duplicate entry error
+            if ($e->getCode() === '23000' || str_contains($e->getMessage(), 'Duplicate entry')) {
+                return redirect()->back()
+                    ->withErrors(['error' => 'You have already applied for this job.'])
+                    ->withInput();
+            }
+
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to submit application. Please try again.'])
+                ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Job application failed', [
+                'user_id' => Auth::id(),
+                'job_id' => $job->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to submit application: '.$e->getMessage()])
+                ->withInput();
+        }
     }
 
     /**
@@ -286,6 +355,55 @@ class JobListingController extends Controller
 
         return redirect()->back()
             ->with('success', 'Job listing archived successfully!');
+    }
+
+    /**
+     * Show current user's job applications.
+     */
+    public function myApplications(Request $request)
+    {
+        $user = Auth::user();
+
+        // If user is admin, redirect them (admins shouldn't use this page)
+        if ($user->isAdmin()) {
+            return redirect()->route('jobs.index');
+        }
+
+        $query = JobApplication::with(['jobListing:id,title,company_name'])
+            ->where('user_id', $user->id)
+            ->latest();
+
+        // Filter by status if provided
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $applications = $query->paginate(15);
+
+        return view('jobs.my-applications', compact('applications'));
+    }
+
+    /**
+     * Show a single user's application.
+     */
+    public function showMyApplication(JobApplication $application)
+    {
+        $user = Auth::user();
+
+        // If user is admin, redirect them
+        if ($user->isAdmin()) {
+            return redirect()->route('jobs.index');
+        }
+
+        // Ensure the application belongs to the current user
+        if ($application->user_id !== $user->id) {
+            abort(403, 'Unauthorized access to application.');
+        }
+
+        // Load the job listing with related data
+        $application->load(['jobListing.category', 'jobListing.poster']);
+
+        return view('jobs.show-my-application', compact('application'));
     }
 
     /**

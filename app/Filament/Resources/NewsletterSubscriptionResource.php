@@ -51,6 +51,9 @@ class NewsletterSubscriptionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function ($query) {
+                $query->with('user');
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('email')
                     ->searchable()
@@ -60,14 +63,32 @@ class NewsletterSubscriptionResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->formatStateUsing(fn (?string $state, NewsletterSubscription $record) => $state ?? 'Guest'),
-                Tables\Columns\IconColumn::make('user_id')
+                Tables\Columns\TextColumn::make('user.role')
                     ->label('Account Type')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-user')
-                    ->falseIcon('heroicon-o-user-minus')
-                    ->trueColor('success')
-                    ->falseColor('gray')
-                    ->getStateUsing(fn (NewsletterSubscription $record) => $record->user_id !== null),
+                    ->badge()
+                    ->getStateUsing(function (NewsletterSubscription $record): ?string {
+                        if (! $record->user_id) {
+                            return null;
+                        }
+
+                        return $record->user?->role;
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'superadmin' => 'Super Admin',
+                        'admin' => 'Admin',
+                        'client' => 'Client',
+                        'user' => 'User',
+                        null => 'Guest',
+                        default => 'Guest',
+                    })
+                    ->color(fn (?string $state): string => match ($state) {
+                        'superadmin' => 'danger',
+                        'admin' => 'warning',
+                        'client' => 'info',
+                        'user' => 'success',
+                        null => 'gray',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('subscribed_at')
                     ->label('Subscribed')
                     ->dateTime()

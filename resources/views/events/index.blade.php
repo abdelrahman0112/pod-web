@@ -227,6 +227,11 @@
     <!-- Right Sidebar -->
     <div class="w-full lg:w-80 lg:flex-shrink-0 min-w-0">
         <div class="space-y-6">
+            <!-- My Event Registrations Widget -->
+            @if(auth()->check())
+                <x-widgets.my-event-registrations :registrations="$userRegistrations ?? collect()" />
+            @endif
+
             <!-- Event Statistics -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
                 <h3 class="font-semibold text-slate-800 mb-4">Event Statistics</h3>

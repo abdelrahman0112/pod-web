@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\EventRegistrationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,16 +18,16 @@ class EventRegistration extends Model
         'text_code',
         'checked_in',
         'checked_in_at',
-        'cancelled_at',
-        'joined_chat',
     ];
 
-    protected $casts = [
-        'checked_in' => 'boolean',
-        'checked_in_at' => 'datetime',
-        'cancelled_at' => 'datetime',
-        'joined_chat' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'checked_in' => 'boolean',
+            'checked_in_at' => 'datetime',
+            'status' => EventRegistrationStatus::class,
+        ];
+    }
 
     /**
      * Get the event this registration belongs to.
@@ -49,7 +50,7 @@ class EventRegistration extends Model
      */
     public function isConfirmed(): bool
     {
-        return $this->status === 'confirmed';
+        return $this->status === EventRegistrationStatus::CONFIRMED;
     }
 
     /**
@@ -57,7 +58,7 @@ class EventRegistration extends Model
      */
     public function isWaitlisted(): bool
     {
-        return $this->status === 'waitlisted';
+        return $this->status === EventRegistrationStatus::WAITLISTED;
     }
 
     /**
@@ -65,7 +66,7 @@ class EventRegistration extends Model
      */
     public function isCancelled(): bool
     {
-        return $this->status === 'cancelled';
+        return $this->status === EventRegistrationStatus::CANCELLED;
     }
 
     /**
@@ -82,8 +83,7 @@ class EventRegistration extends Model
     public function cancel(): void
     {
         $this->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
+            'status' => EventRegistrationStatus::CANCELLED,
         ]);
 
         // Promote someone from waitlist if event is full
@@ -101,14 +101,6 @@ class EventRegistration extends Model
             'checked_in' => true,
             'checked_in_at' => now(),
         ]);
-    }
-
-    /**
-     * Mark as joined chat.
-     */
-    public function joinChat(): void
-    {
-        $this->update(['joined_chat' => true]);
     }
 
     /**
@@ -139,7 +131,7 @@ class EventRegistration extends Model
      */
     public function scopeConfirmed($query)
     {
-        return $query->where('status', 'confirmed');
+        return $query->where('status', EventRegistrationStatus::CONFIRMED);
     }
 
     /**
@@ -147,7 +139,7 @@ class EventRegistration extends Model
      */
     public function scopeWaitlisted($query)
     {
-        return $query->where('status', 'waitlisted');
+        return $query->where('status', EventRegistrationStatus::WAITLISTED);
     }
 
     /**
@@ -155,7 +147,7 @@ class EventRegistration extends Model
      */
     public function scopeCancelled($query)
     {
-        return $query->where('status', 'cancelled');
+        return $query->where('status', EventRegistrationStatus::CANCELLED);
     }
 
     /**

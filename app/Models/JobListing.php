@@ -101,7 +101,7 @@ class JobListing extends Model
     public function isAcceptingApplications(): bool
     {
         return $this->status === JobStatus::ACTIVE->value
-            && $this->application_deadline >= now()->startOfDay();
+            && $this->application_deadline->copy()->startOfDay() >= now()->startOfDay();
     }
 
     /**
@@ -109,7 +109,7 @@ class JobListing extends Model
      */
     public function hasDeadlinePassed(): bool
     {
-        return $this->application_deadline < now()->startOfDay();
+        return $this->application_deadline->copy()->startOfDay() < now()->startOfDay();
     }
 
     /**
@@ -123,11 +123,6 @@ class JobListing extends Model
 
         // Check if user already applied
         if ($this->applications()->where('user_id', $user->id)->exists()) {
-            return false;
-        }
-
-        // Check if user's email is verified (required for applications)
-        if (! $user->hasVerifiedEmail()) {
             return false;
         }
 
@@ -153,7 +148,7 @@ class JobListing extends Model
 
         $application = $this->applications()->create(array_merge($applicationData, [
             'user_id' => $user->id,
-            'status' => 'pending',
+            'status' => \App\JobApplicationStatus::PENDING->value,
         ]));
 
         return $application;

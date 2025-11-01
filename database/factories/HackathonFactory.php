@@ -66,7 +66,6 @@ class HackathonFactory extends Factory
             'rules' => fake()->optional(0.5)->paragraphs(2, true),
             'is_active' => true,
             'created_by' => \App\Models\User::factory(),
-            'sponsor_id' => fake()->optional(0.6)->randomElement(\App\Models\User::pluck('id')->toArray()),
         ];
     }
 }

@@ -15,6 +15,9 @@ class HackathonTeam extends Model
         'name',
         'leader_id',
         'description',
+        'project_name',
+        'project_description',
+        'project_repository',
         'is_public',  // Whether team is open to join requests from others
     ];
 

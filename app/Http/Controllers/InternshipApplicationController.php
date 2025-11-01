@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\InternshipApplicationStatus;
 use App\Models\InternshipApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -61,7 +62,7 @@ class InternshipApplicationController extends Controller
             'availability_start' => $validated['availability_start'],
             'availability_end' => $validated['availability_end'],
             'motivation' => $validated['motivation'],
-            'status' => 'pending',
+            'status' => InternshipApplicationStatus::PENDING,
         ]);
 
         return redirect()->route('internships.index')->with('success', 'Your internship application has been submitted successfully! We will review your application and get back to you soon.');

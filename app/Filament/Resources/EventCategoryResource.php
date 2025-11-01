@@ -24,19 +24,20 @@ class EventCategoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true),
-                Forms\Components\ColorPicker::make('color')
-                    ->required()
-                    ->default('#3B82F6'),
-                Forms\Components\Textarea::make('description')
-                    ->maxLength(500)
-                    ->columnSpanFull(),
-                Forms\Components\Toggle::make('is_active')
-                    ->default(true)
-                    ->required(),
+                Forms\Components\Section::make('Event Category Information')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(EventCategory::class, 'name', ignoreRecord: true),
+                        Forms\Components\ColorPicker::make('color')
+                            ->required()
+                            ->default('#3B82F6'),
+                        Forms\Components\Toggle::make('is_active')
+                            ->default(true)
+                            ->required(),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -51,16 +52,6 @@ class EventCategoryResource extends Resource
                     ->copyable()
                     ->copyMessage('Color copied')
                     ->copyMessageDuration(1500),
-                Tables\Columns\TextColumn::make('description')
-                    ->limit(50)
-                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
-                        $state = $column->getState();
-                        if (strlen($state) <= 50) {
-                            return null;
-                        }
-
-                        return $state;
-                    }),
                 Tables\Columns\TextColumn::make('events_count')
                     ->counts('events')
                     ->label('Events')

@@ -139,8 +139,8 @@
                         <i class="ri-group-line"></i>
                         <span>Hybrid</span>
                     </span>
-                @endif
-                @if(in_array($hackathon->format->value, ['on-site', 'hybrid']) && $hackathon->location)
+                    @endif
+                @if(in_array($hackathon->format->value, ['on-site', 'hybrid']) && !empty($hackathon->location))
                     <span class="text-xs text-slate-500">•</span>
                     <span class="inline-flex items-center space-x-1 text-slate-600 text-xs font-medium">
                         <i class="ri-map-pin-line"></i>

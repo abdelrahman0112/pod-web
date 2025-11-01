@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\NotificationType;
+use App\Services\NotificationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +13,13 @@ use Illuminate\Support\Facades\Storage;
 class PostController extends Controller
 {
     use AuthorizesRequests;
+
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
 
     /**
      * Display a listing of the resource.
@@ -322,6 +331,23 @@ class PostController extends Controller
         $actualCount = $post->getActualLikesCount();
         $post->update(['likes_count' => $actualCount]);
 
+        // Send notification to post owner (if someone else liked their post)
+        if ($liked && $post->user_id !== $userId) {
+            $this->notificationService->send(
+                $post->user,
+                NotificationType::POST_LIKED,
+                [
+                    'title' => 'New Like',
+                    'body' => Auth::user()->name.' liked your post',
+                    'post_id' => $post->id,
+                    'liker_id' => $userId,
+                    'liker_name' => Auth::user()->name,
+                    'avatar' => Auth::user()->avatar,
+                ],
+                ['database', 'push']
+            );
+        }
+
         return response()->json([
             'success' => true,
             'liked' => $liked,
@@ -457,11 +483,13 @@ class PostController extends Controller
     private function linkifyUrls(string $text): string
     {
         $pattern = '/(?<![\"\'>])(https?:\/\/[^\s<]+)/i';
+
         return preg_replace_callback($pattern, function ($matches) {
             $url = $matches[1];
             $display = strlen($url) > 80 ? substr($url, 0, 77).'…' : $url;
             $safeUrl = e($url);
             $safeDisplay = e($display);
+
             return '<a href="'.$safeUrl.'" target="_blank" rel="nofollow noopener" class="text-indigo-600 hover:underline">'.$safeDisplay.'</a>';
         }, e($text));
     }
@@ -473,6 +501,7 @@ class PostController extends Controller
             $prefix = $m[1];
             $text = $m[2];
             $replaced = preg_replace('/(^|\s)#(\w+)/', '$1<span class="text-indigo-600 font-semibold">#$2</span>', $text);
+
             return $prefix.$replaced;
         }, $html);
     }
@@ -480,6 +509,7 @@ class PostController extends Controller
     private function formatContent(string $raw): string
     {
         $withLinks = $this->linkifyUrls($raw);
+
         return $this->highlightHashtags($withLinks);
     }
 
@@ -493,6 +523,7 @@ class PostController extends Controller
         $intermediate = preg_replace_callback('/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/is', function ($m) {
             $href = trim($m[1] ?? '');
             $text = trim(strip_tags($m[2] ?? ''));
+
             return $href !== '' ? $href : $text;
         }, $html);
 

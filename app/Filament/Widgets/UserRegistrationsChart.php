@@ -30,11 +30,11 @@ class UserRegistrationsChart extends ChartWidget
             ],
             'scales' => [
                 'x' => [
-                    'grid' => [ 'display' => false ],
+                    'grid' => ['display' => false],
                 ],
                 'y' => [
-                    'grid' => [ 'display' => true ],
-                    'ticks' => [ 'precision' => 0 ],
+                    'grid' => ['display' => true],
+                    'ticks' => ['precision' => 0],
                 ],
             ],
         ];

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Experience extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'title',
@@ -38,9 +41,9 @@ class Experience extends Model
     public function getDurationAttribute(): string
     {
         if ($this->is_current) {
-            return $this->start_date->format('M Y') . ' - Present';
+            return $this->start_date->format('M Y').' - Present';
         }
 
-        return $this->start_date->format('M Y') . ' - ' . $this->end_date->format('M Y');
+        return $this->start_date->format('M Y').' - '.$this->end_date->format('M Y');
     }
 }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\Post;
+use App\NotificationType;
+use App\Services\NotificationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +13,13 @@ use Illuminate\Support\Facades\Auth;
 class CommentController extends Controller
 {
     use AuthorizesRequests;
+
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
 
     /**
      * Store a newly created comment.
@@ -43,6 +52,44 @@ class CommentController extends Controller
 
         // Increment post comments count
         $post->increment('comments_count');
+
+        // Send notification to relevant users
+        if ($validated['parent_id'] ?? null) {
+            // Reply to comment
+            $parentComment = Comment::find($validated['parent_id']);
+            if ($parentComment && $parentComment->user_id !== Auth::id()) {
+                $this->notificationService->send(
+                    $parentComment->user,
+                    NotificationType::COMMENT_REPLY,
+                    [
+                        'title' => 'New Reply',
+                        'body' => Auth::user()->name.' replied to your comment',
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'replier_id' => Auth::id(),
+                        'replier_name' => Auth::user()->name,
+                        'avatar' => Auth::user()->avatar,
+                    ],
+                    ['database', 'push']
+                );
+            }
+        } elseif ($post->user_id !== Auth::id()) {
+            // New comment on post
+            $this->notificationService->send(
+                $post->user,
+                NotificationType::COMMENT_ADDED,
+                [
+                    'title' => 'New Comment',
+                    'body' => Auth::user()->name.' commented on your post',
+                    'post_id' => $post->id,
+                    'comment_id' => $comment->id,
+                    'commenter_id' => Auth::id(),
+                    'commenter_name' => Auth::user()->name,
+                    'avatar' => Auth::user()->avatar,
+                ],
+                ['database', 'push']
+            );
+        }
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -177,7 +224,9 @@ class CommentController extends Controller
      */
     public function approve(Comment $comment)
     {
-        $this->authorize('admin'); // Assuming you have admin authorization
+        if (! Auth::user()?->isAdmin()) {
+            abort(403, 'Unauthorized. Admin privileges required.');
+        }
 
         $comment->update(['is_approved' => true]);
 
@@ -189,7 +238,9 @@ class CommentController extends Controller
      */
     public function reject(Comment $comment)
     {
-        $this->authorize('admin'); // Assuming you have admin authorization
+        if (! Auth::user()?->isAdmin()) {
+            abort(403, 'Unauthorized. Admin privileges required.');
+        }
 
         $comment->update(['is_approved' => false]);
 

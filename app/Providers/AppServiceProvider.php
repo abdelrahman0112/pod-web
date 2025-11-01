@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Carbon\Carbon;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Socialite\Facades\Socialite;
 use SocialiteProviders\LinkedIn\Provider;
@@ -29,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Set default timezone for Carbon globally
+        Carbon::setLocale(config('app.locale'));
+        date_default_timezone_set(config('app.timezone'));
+
         // Configure LinkedIn Socialite Provider
         Socialite::extend('linkedin', function ($app) {
             $config = $app['config']['services.linkedin'];

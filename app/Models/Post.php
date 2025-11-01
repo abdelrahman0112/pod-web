@@ -110,7 +110,7 @@ class Post extends Model
      */
     public function canUserEdit($user): bool
     {
-        return $user && ($user->id === $this->user_id || $user->hasRole(['admin', 'super_admin']));
+        return $user && ($user->id === $this->user_id || $user->hasAnyRole(['admin', 'superadmin']));
     }
 
     /**

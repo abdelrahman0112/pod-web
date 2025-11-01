@@ -14,14 +14,14 @@ class ProfileAvatarFunctionalTest extends TestCase
 
     public function test_profile_edit_page_shows_avatar_upload_form(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['profile_completed' => true]);
 
         $response = $this->actingAs($user)->get('/profile/edit');
 
         $response->assertStatus(200);
         $response->assertSee('Upload New Photo');
         $response->assertSee('name="avatar"', false);
-        $response->assertSee('accept="image/*"', false);
+        $response->assertSee('accept="image/jpeg,image/jpg,image/png,image/webp"', false);
         $response->assertSee('enctype="multipart/form-data"', false);
     }
 
@@ -33,18 +33,22 @@ class ProfileAvatarFunctionalTest extends TestCase
             'first_name' => 'John',
             'last_name' => 'Doe',
             'email' => 'john@example.com',
+            'profile_completed' => true,
         ]);
 
         $avatar = UploadedFile::fake()->image('avatar.jpg', 300, 300);
 
         $response = $this->actingAs($user)
+            ->from(route('profile.edit'))
             ->put('/profile', [
                 'first_name' => 'John',
                 'last_name' => 'Doe',
-                'email' => 'john@example.com',
+                'email' => $user->email,
                 'avatar' => $avatar,
             ]);
 
+        // After profile update, if profile becomes complete, it may redirect to home
+        // So we just check for a successful redirect with success message
         $response->assertRedirect();
         $response->assertSessionHas('success', 'Profile updated successfully!');
 
@@ -61,6 +65,7 @@ class ProfileAvatarFunctionalTest extends TestCase
     {
         $user = User::factory()->create([
             'avatar' => '/storage/avatars/test-avatar.jpg',
+            'profile_completed' => true,
         ]);
 
         $response = $this->actingAs($user)->get('/profile');

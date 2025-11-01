@@ -65,7 +65,22 @@ class EventController extends Controller
 
         $categories = \App\Models\EventCategory::where('is_active', true)->orderBy('name')->get();
 
-        return view('events.index', compact('events', 'categories'));
+        // Get user's upcoming event registrations for the widget
+        $userRegistrations = collect();
+        if (Auth::check()) {
+            $userRegistrations = \App\Models\EventRegistration::with(['event:id,title,start_date,location'])
+                ->where('user_id', Auth::id())
+                ->where('status', '!=', \App\EventRegistrationStatus::CANCELLED->value)
+                ->whereHas('event', function ($q) {
+                    $q->where('start_date', '>', now())
+                        ->where('is_active', true);
+                })
+                ->latest('created_at')
+                ->limit(5)
+                ->get();
+        }
+
+        return view('events.index', compact('events', 'categories', 'userRegistrations'));
     }
 
     /**
@@ -105,8 +120,7 @@ class EventController extends Controller
                 'agenda_items' => 'nullable|array',
                 'agenda_items.*.title' => 'required_with:agenda_items|string|max:255',
                 'agenda_items.*.description' => 'nullable|string',
-                'agenda_items.*.start_time' => 'nullable|date',
-                'agenda_items.*.end_time' => 'nullable|date|after:agenda_items.*.start_time',
+                'agenda_items.*.start_time' => 'required_with:agenda_items|date',
             ]);
 
             $validated['created_by'] = Auth::id();
@@ -126,12 +140,10 @@ class EventController extends Controller
             // Handle agenda items
             if ($request->has('agenda_items')) {
                 foreach ($request->agenda_items as $index => $agendaItem) {
-                    if (! empty($agendaItem['title'])) {
+                    if (! empty($agendaItem['title']) && ! empty($agendaItem['start_time'])) {
                         $event->agendaItems()->create([
                             'title' => $agendaItem['title'],
-                            'description' => $agendaItem['description'] ?? null,
-                            'start_time' => $agendaItem['start_time'] ?? null,
-                            'end_time' => $agendaItem['end_time'] ?? null,
+                            'start_time' => $agendaItem['start_time'],
                             'order' => $index,
                         ]);
                     }
@@ -157,7 +169,7 @@ class EventController extends Controller
      */
     public function show(Event $event)
     {
-        $event->load(['creator', 'confirmedRegistrations.user', 'agendaItems', 'category']);
+        $event->load(['creator', 'confirmedRegistrations.user', 'waitlistedRegistrations', 'agendaItems', 'category']);
 
         $userRegistration = null;
         if (Auth::check()) {
@@ -186,6 +198,7 @@ class EventController extends Controller
     {
         $this->authorize('update', $event);
 
+        $event->load('agendaItems');
         $categories = \App\Models\EventCategory::where('is_active', true)->orderBy('name')->get();
         $isEdit = true;
 
@@ -213,9 +226,7 @@ class EventController extends Controller
             'category_id' => 'required|exists:event_categories,id',
             'agenda_items' => 'nullable|array',
             'agenda_items.*.title' => 'required_with:agenda_items|string|max:255',
-            'agenda_items.*.description' => 'nullable|string',
-            'agenda_items.*.start_time' => 'nullable|date',
-            'agenda_items.*.end_time' => 'nullable|date|after:agenda_items.*.start_time',
+            'agenda_items.*.start_time' => 'required_with:agenda_items|date',
         ]);
 
         // Handle banner image upload
@@ -241,12 +252,10 @@ class EventController extends Controller
 
             // Create new agenda items
             foreach ($request->agenda_items as $index => $agendaItem) {
-                if (! empty($agendaItem['title'])) {
+                if (! empty($agendaItem['title']) && ! empty($agendaItem['start_time'])) {
                     $event->agendaItems()->create([
                         'title' => $agendaItem['title'],
-                        'description' => $agendaItem['description'] ?? null,
-                        'start_time' => $agendaItem['start_time'] ?? null,
-                        'end_time' => $agendaItem['end_time'] ?? null,
+                        'start_time' => $agendaItem['start_time'],
                         'order' => $index,
                     ]);
                 }
@@ -287,7 +296,7 @@ class EventController extends Controller
 
         $registration = $event->registerUser(Auth::user());
 
-        $message = $registration->status === 'confirmed'
+        $message = $registration->status === \App\EventRegistrationStatus::CONFIRMED
             ? 'Successfully registered for the event!'
             : 'Added to waitlist. You will be notified if a spot becomes available.';
 
@@ -309,7 +318,7 @@ class EventController extends Controller
                 ->with('error', 'You are not registered for this event.');
         }
 
-        $wasConfirmed = $registration->status === 'confirmed';
+        $wasConfirmed = $registration->status === \App\EventRegistrationStatus::CONFIRMED;
         $registration->delete();
 
         // If this was a confirmed registration, promote someone from waitlist
@@ -333,7 +342,7 @@ class EventController extends Controller
 
         $registration = $event->registrations()
             ->where('ticket_code', $validated['ticket_code'])
-            ->where('status', 'confirmed')
+            ->where('status', \App\EventRegistrationStatus::CONFIRMED->value)
             ->first();
 
         if (! $registration) {

@@ -75,4 +75,18 @@ class HackathonPolicy
     {
         return $user->role === 'superadmin';
     }
+
+    /**
+     * Determine whether the user can view participants for the hackathon.
+     */
+    public function viewParticipants(User $user, Hackathon $hackathon): bool
+    {
+        // Allow superadmin and admin to view any hackathon participants
+        if (in_array($user->role, ['superadmin', 'admin'])) {
+            return true;
+        }
+
+        // Allow hackathon creator to view participants for their own hackathon
+        return $hackathon->created_by === $user->id;
+    }
 }

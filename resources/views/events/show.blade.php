@@ -67,7 +67,7 @@
                         @endif
                     </div>
                     
-                    @if(auth()->check() && (auth()->user()->id === $event->created_by || auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin'))
+                    @if(auth()->check() && (auth()->user()->id === $event->created_by || auth()->user()->isAdmin()))
                         <a href="{{ route('events.edit', $event) }}" class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-button hover:bg-slate-50 transition-colors !rounded-button whitespace-nowrap">
                             <i class="ri-edit-line mr-2"></i>
                             Edit Event
@@ -97,16 +97,10 @@
                         <div class="flex-1 min-w-0">
                             <div class="bg-slate-50 rounded-lg p-4">
                                 <h3 class="font-semibold text-slate-800 mb-2">{{ $item->title }}</h3>
-                                @if($item->description)
-                                    <p class="text-sm text-slate-600 mb-3">{{ $item->description }}</p>
-                                @endif
                                 <div class="flex items-center space-x-4 text-xs text-slate-500">
                                     <div class="flex items-center space-x-1">
                                         <i class="ri-time-line"></i>
-                                        <span>{{ $item->start_time->format('g:i A') }}</span>
-                                        @if($item->end_time)
-                                            <span>- {{ $item->end_time->format('g:i A') }}</span>
-                                        @endif
+                                        <span>{{ $item->start_time->format('M j, Y g:i A') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -160,7 +154,7 @@
 
     <!-- Right Sidebar -->
     <div class="w-full lg:w-80 lg:flex-shrink-0 min-w-0">
-        <div class="space-y-6">
+        <div class="flex flex-col gap-6">
             <!-- Registration Widget -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
                 <h3 class="font-semibold text-slate-800 mb-4">Registration</h3>
@@ -178,13 +172,32 @@
                         <span class="text-sm text-slate-600">Available Places</span>
                         <span class="text-sm font-semibold text-slate-800">{{ $event->getAvailableSpots() }}</span>
                     </div>
-                    <div class="w-full bg-slate-200 rounded-full h-2">
-                        @php
-                            $percentage = ($event->confirmedRegistrations->count() / $event->max_attendees) * 100;
-                        @endphp
-                        <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $percentage }}%"></div>
+                    @php
+                        $confirmedCount = $event->confirmedRegistrations->count();
+                        $waitlistedCount = $event->waitlistedRegistrations->count();
+                        
+                        // Calculate percentages based on max_attendees
+                        $confirmedPercentage = min(100, ($confirmedCount / $event->max_attendees) * 100);
+                        $waitlistedPercentage = ($waitlistedCount / $event->max_attendees) * 100;
+                        
+                        // For the progress bar: confirmed fills up to 100%, waitlisted shows beyond (capped for visibility)
+                        $waitlistedVisualPercentage = min(30, $waitlistedPercentage); // Cap at 30% of bar for visual clarity
+                    @endphp
+                    <div class="w-full bg-slate-200 rounded-full h-2 relative overflow-hidden">
+                        @if($confirmedCount > 0)
+                            <div class="bg-indigo-600 h-2 rounded-full absolute left-0 top-0" style="width: {{ $confirmedPercentage }}%"></div>
+                        @endif
+                        @if($waitlistedCount > 0)
+                            <div class="bg-red-500 h-2 rounded-full absolute left-0 top-0" style="left: {{ $confirmedPercentage }}%; width: {{ $waitlistedVisualPercentage }}%"></div>
+                        @endif
                     </div>
-                    <div class="text-xs text-slate-500 mt-1">{{ $event->confirmedRegistrations->count() }} of {{ $event->max_attendees }} registered</div>
+                    <div class="text-xs text-slate-500 mt-1">
+                        <span class="text-indigo-600 font-medium">{{ $confirmedCount }} confirmed</span>
+                        @if($waitlistedCount > 0)
+                            <span class="text-red-600 font-medium">+ {{ $waitlistedCount }} waitlisted</span>
+                        @endif
+                        <span> of {{ $event->max_attendees }} capacity</span>
+                    </div>
                 </div>
                 @else
                 <div class="mb-4">
@@ -194,55 +207,120 @@
                 @endif
                 
                 <!-- Event Countdown -->
-                <div class="mb-4">
-                    <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                        <div class="text-sm text-indigo-700 font-medium mb-2">Event Date</div>
-                        <div class="text-lg font-semibold text-indigo-800 mb-3">{{ $event->start_date->format('M j, Y \a\t g:i A') }}</div>
+                <div class="mb-6">
+                    <div class="bg-gradient-to-br from-slate-50 to-slate-100/50 border border-slate-200 rounded-xl p-5">
+                        <div class="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Event Starts In</div>
+                        <div class="text-base font-semibold text-slate-800 mb-4">{{ $event->start_date->format('M j, Y \a\t g:i A') }}</div>
                         @if($event->start_date > now())
-                            <div id="countdown-{{ $event->id }}" class="grid grid-cols-4 gap-2 text-center">
-                                <div class="bg-white rounded p-2">
-                                    <div class="text-lg font-bold text-indigo-600" id="days-{{ $event->id }}">0</div>
-                                    <div class="text-xs text-indigo-500">Days</div>
-                                </div>
-                                <div class="bg-white rounded p-2">
-                                    <div class="text-lg font-bold text-indigo-600" id="hours-{{ $event->id }}">0</div>
-                                    <div class="text-xs text-indigo-500">Hours</div>
-                                </div>
-                                <div class="bg-white rounded p-2">
-                                    <div class="text-lg font-bold text-indigo-600" id="minutes-{{ $event->id }}">0</div>
-                                    <div class="text-xs text-indigo-500">Minutes</div>
-                                </div>
-                                <div class="bg-white rounded p-2">
-                                    <div class="text-lg font-bold text-indigo-600" id="seconds-{{ $event->id }}">0</div>
-                                    <div class="text-xs text-indigo-500">Seconds</div>
+                            <div id="countdown-{{ $event->id }}" class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                                <div class="grid grid-cols-4 divide-x divide-slate-200">
+                                    <div class="p-3 flex flex-col items-center justify-center text-center">
+                                        <div class="text-2xl font-bold text-indigo-600 mb-1 leading-none" id="days-{{ $event->id }}">0</div>
+                                        <div class="text-[8px] text-slate-500 font-medium uppercase tracking-wide">Days</div>
+                                    </div>
+                                    <div class="p-3 flex flex-col items-center justify-center text-center">
+                                        <div class="text-2xl font-bold text-indigo-600 mb-1 leading-none" id="hours-{{ $event->id }}">0</div>
+                                        <div class="text-[8px] text-slate-500 font-medium uppercase tracking-wide">Hours</div>
+                                    </div>
+                                    <div class="p-3 flex flex-col items-center justify-center text-center">
+                                        <div class="text-2xl font-bold text-indigo-600 mb-1 leading-none" id="minutes-{{ $event->id }}">0</div>
+                                        <div class="text-[8px] text-slate-500 font-medium uppercase tracking-wide">Minutes</div>
+                                    </div>
+                                    <div class="p-3 flex flex-col items-center justify-center text-center">
+                                        <div class="text-2xl font-bold text-indigo-600 mb-1 leading-none" id="seconds-{{ $event->id }}">0</div>
+                                        <div class="text-[8px] text-slate-500 font-medium uppercase tracking-wide">Seconds</div>
+                                    </div>
                                 </div>
                             </div>
                         @else
-                            <div class="text-sm text-indigo-600 font-medium">Event has started</div>
+                            <div class="bg-white rounded-lg px-4 py-3 text-center border border-slate-200">
+                                <div class="text-sm text-slate-600 font-medium">Event has started</div>
+                            </div>
                         @endif
                     </div>
                 </div>
                 
                 <!-- Registration Button -->
-                <div class="space-y-3">
+                <div class="space-y-3 mt-0">
                     @if(auth()->check())
                         @if($event->canUserRegister(auth()->user()))
+                            @php
+                                $willBeWaitlisted = $event->isFull() && $event->waitlist_enabled;
+                            @endphp
                             <form method="POST" action="{{ route('events.register', $event) }}" class="w-full">
                                 @csrf
-                                <button type="submit" class="w-full bg-indigo-600 text-white px-4 py-3 rounded-button hover:bg-indigo-700 transition-colors !rounded-button">
-                                    <i class="ri-user-add-line mr-2"></i>
-                                    Register for Event
+                                @if($willBeWaitlisted)
+                                    <div class="mb-3 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                        <div class="flex items-start space-x-2">
+                                            <i class="ri-time-line text-orange-600 mt-0.5"></i>
+                                            <div class="flex-1">
+                                                <div class="text-sm font-medium text-orange-800">Join Waitlist</div>
+                                                <div class="text-xs text-orange-700 mt-1">You'll be added to the waitlist and notified if a spot becomes available.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                                <button type="submit" class="w-full {{ $willBeWaitlisted ? 'bg-orange-600 hover:bg-orange-700' : 'bg-indigo-600 hover:bg-indigo-700' }} text-white px-4 py-3 rounded-button transition-colors !rounded-button">
+                                    <i class="{{ $willBeWaitlisted ? 'ri-time-line' : 'ri-user-add-line' }} mr-2"></i>
+                                    {{ $willBeWaitlisted ? 'Join Waitlist' : 'Register for Event' }}
                                 </button>
                             </form>
-                        @elseif($event->registrations()->where('user_id', auth()->user()->id)->exists())
-                            <div class="w-full bg-green-50 text-green-700 px-4 py-3 rounded-button text-center">
-                                <i class="ri-check-line mr-2"></i>
-                                You're Registered
-                            </div>
+                        @elseif($userRegistration)
+                            @if($userRegistration->status === \App\EventRegistrationStatus::WAITLISTED)
+                                <div class="w-full bg-orange-50 border border-orange-200 rounded-lg px-4 py-3">
+                                    <div class="flex items-center justify-center space-x-2 mb-2">
+                                        <i class="ri-time-line text-orange-600"></i>
+                                        <span class="text-orange-800 font-medium">On Waitlist</span>
+                                    </div>
+                                    <div class="text-xs text-orange-700 text-center">
+                                        You're on the waitlist. We'll notify you if a spot becomes available.
+                                    </div>
+                                    @php
+                                        $waitlistPosition = $event->waitlistedRegistrations
+                                            ->filter(function($registration) use ($userRegistration) {
+                                                return $registration->created_at->lte($userRegistration->created_at);
+                                            })
+                                            ->count();
+                                    @endphp
+                                    @if($waitlistPosition > 0)
+                                        <div class="text-xs text-orange-600 text-center mt-2 font-medium">
+                                            Position: #{{ $waitlistPosition }}
+                                        </div>
+                                    @endif
+                                    <form method="POST" action="{{ route('events.cancel-registration', $event) }}" class="mt-3">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="w-full text-xs text-orange-700 hover:text-orange-800 underline">
+                                            Cancel Waitlist Registration
+                                        </button>
+                                    </form>
+                                </div>
+                            @elseif($userRegistration->status === \App\EventRegistrationStatus::CONFIRMED)
+                                <div class="w-full bg-green-50 border border-green-200 rounded-lg text-green-700 px-4 py-3 text-center">
+                                    <i class="ri-check-line mr-2"></i>
+                                    You're Registered
+                                </div>
+                                <form method="POST" action="{{ route('events.cancel-registration', $event) }}" class="mt-3">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="w-full text-xs text-red-600 hover:text-red-700 underline">
+                                        Cancel Registration
+                                    </button>
+                                </form>
+                            @else
+                                <div class="w-full bg-slate-50 border border-slate-200 rounded-lg text-slate-600 px-4 py-3 text-center">
+                                    <i class="ri-check-line mr-2"></i>
+                                    You're Registered
+                                </div>
+                            @endif
                         @else
-                            <div class="w-full bg-slate-50 text-slate-600 px-4 py-3 rounded-button text-center">
+                            <div class="w-full bg-slate-50 border border-slate-200 rounded-lg text-slate-600 px-4 py-3 text-center">
                                 <i class="ri-lock-line mr-2"></i>
-                                Registration Closed
+                                @if($event->isFull() && !$event->waitlist_enabled && $event->isRegistrationOpen())
+                                    Event Full - Registration Closed
+                                @else
+                                    Registration Closed
+                                @endif
                             </div>
                         @endif
                     @else
@@ -253,6 +331,7 @@
                     @endif
                 </div>
             </div>
+            <!-- End Registration Widget -->
 
             <!-- Event Statistics -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">

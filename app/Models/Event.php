@@ -65,7 +65,7 @@ class Event extends Model
      */
     public function confirmedRegistrations()
     {
-        return $this->hasMany(EventRegistration::class)->where('status', 'confirmed');
+        return $this->hasMany(EventRegistration::class)->where('status', \App\EventRegistrationStatus::CONFIRMED->value);
     }
 
     /**
@@ -73,7 +73,7 @@ class Event extends Model
      */
     public function waitlistedRegistrations()
     {
-        return $this->hasMany(EventRegistration::class)->where('status', 'waitlisted');
+        return $this->hasMany(EventRegistration::class)->where('status', \App\EventRegistrationStatus::WAITLISTED->value);
     }
 
     /**
@@ -82,8 +82,8 @@ class Event extends Model
     public function attendees()
     {
         return $this->belongsToMany(User::class, 'event_registrations')
-            ->wherePivot('status', 'confirmed')
-            ->withPivot(['ticket_code', 'text_code', 'checked_in', 'checked_in_at', 'joined_chat'])
+            ->wherePivot('status', \App\EventRegistrationStatus::CONFIRMED->value)
+            ->withPivot(['ticket_code', 'text_code', 'checked_in', 'checked_in_at'])
             ->withTimestamps();
     }
 
@@ -135,6 +135,11 @@ class Event extends Model
             return false;
         }
 
+        // Check if event is full and waitlist is disabled
+        if ($this->isFull() && ! $this->waitlist_enabled) {
+            return false;
+        }
+
         return true;
     }
 
@@ -147,7 +152,9 @@ class Event extends Model
             throw new \Exception('User cannot register for this event.');
         }
 
-        $status = $this->isFull() && $this->waitlist_enabled ? 'waitlisted' : 'confirmed';
+        $status = $this->isFull() && $this->waitlist_enabled
+            ? \App\EventRegistrationStatus::WAITLISTED
+            : \App\EventRegistrationStatus::CONFIRMED;
 
         $registration = $this->registrations()->create([
             'user_id' => $user->id,
@@ -203,7 +210,7 @@ class Event extends Model
             ->get();
 
         foreach ($waitlisted as $registration) {
-            $registration->update(['status' => 'confirmed']);
+            $registration->update(['status' => \App\EventRegistrationStatus::CONFIRMED]);
             $promoted[] = $registration;
         }
 

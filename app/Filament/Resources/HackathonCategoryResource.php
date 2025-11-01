@@ -26,15 +26,16 @@ class HackathonCategoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('description')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('color')
-                    ->required()
-                    ->maxLength(255)
-                    ->default('#4F46E5'),
+                Forms\Components\Section::make('Hackathon Category Information')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\ColorPicker::make('color')
+                            ->required()
+                            ->default('#4F46E5'),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -44,8 +45,10 @@ class HackathonCategoryResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('color')
-                    ->searchable(),
+                Tables\Columns\ColorColumn::make('color')
+                    ->copyable()
+                    ->copyMessage('Color copied')
+                    ->copyMessageDuration(1500),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

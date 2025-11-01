@@ -158,6 +158,7 @@
                     // Also remove any border/margin on the article element if present
                     clonedPost.classList.remove('shadow-[0_8px_24px_rgba(0,0,0,0.04)]');
                     clonedPost.classList.add('shadow-none');
+                    clonedPost.classList.add('border-0');
                     
                     this.modalPostContent.innerHTML = '';
                     this.modalPostContent.appendChild(clonedPost);

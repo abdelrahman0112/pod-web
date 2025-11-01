@@ -6,7 +6,6 @@ use Filament\Widgets\Widget;
 
 class QuickActions extends Widget
 {
-
     protected static ?string $heading = 'Quick Actions';
 
     protected static string $view = 'filament.widgets.quick-actions';
@@ -48,5 +47,3 @@ class QuickActions extends Widget
         ];
     }
 }
-
-

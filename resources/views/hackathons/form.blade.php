@@ -140,18 +140,7 @@
             <!-- Location & Format -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
                 <h2 class="text-xl font-semibold text-slate-800 mb-6">Location & Format</h2>
-                <div class="space-y-6">
-                    <div>
-                        <label for="location" class="block text-sm font-medium text-slate-700 mb-2">Location *</label>
-                        <input type="text" 
-                               id="location"
-                               name="location"
-                               value="{{ old('location', $isEdit ? $hackathon->location : '') }}"
-                               placeholder="Enter hackathon location (e.g., San Francisco, CA or Online)"
-                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                               required />
-                    </div>
-
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Format -->
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-4">Format *</label>
@@ -164,7 +153,7 @@
                                        name="format" 
                                        value="online" 
                                        {{ $formatValue == 'online' ? 'checked' : '' }}
-                                       class="sr-only" />
+                                       class="sr-only format-radio" />
                                 <div class="w-5 h-5 border-2 rounded-full flex items-center justify-center mr-3 border-slate-300">
                                     <div class="w-2.5 h-2.5 bg-indigo-600 rounded-full hidden"></div>
                                 </div>
@@ -175,7 +164,7 @@
                                        name="format" 
                                        value="on-site" 
                                        {{ $formatValue == 'on-site' ? 'checked' : '' }}
-                                       class="sr-only" />
+                                       class="sr-only format-radio" />
                                 <div class="w-5 h-5 border-2 rounded-full flex items-center justify-center mr-3 border-slate-300">
                                     <div class="w-2.5 h-2.5 bg-indigo-600 rounded-full hidden"></div>
                                 </div>
@@ -186,13 +175,28 @@
                                        name="format" 
                                        value="hybrid" 
                                        {{ $formatValue == 'hybrid' ? 'checked' : '' }}
-                                       class="sr-only" />
+                                       class="sr-only format-radio" />
                                 <div class="w-5 h-5 border-2 rounded-full flex items-center justify-center mr-3 border-slate-300">
                                     <div class="w-2.5 h-2.5 bg-indigo-600 rounded-full hidden"></div>
                                 </div>
                                 <span class="text-sm text-slate-700">Hybrid</span>
                             </label>
                         </div>
+                    </div>
+
+                    <!-- Location -->
+                    <div>
+                        <label for="location" class="block text-sm font-medium text-slate-700 mb-2">
+                            Location <span id="location-required" class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               id="location"
+                               name="location"
+                               value="{{ old('location', $isEdit ? ($hackathon->location ?? '') : '') }}"
+                               placeholder="e.g., Cairo, Egypt or Online"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                               />
+                        <p class="mt-1 text-xs text-slate-500" id="location-help">Required for on-site and hybrid events. Optional for online events.</p>
                     </div>
                 </div>
             </div>
@@ -467,6 +471,38 @@
                     }
                 });
             };
+
+            // Location field conditional requirement based on format
+            const formatRadios = document.querySelectorAll('.format-radio');
+            const locationInput = document.getElementById('location');
+            const locationRequired = document.getElementById('location-required');
+            const locationHelp = document.getElementById('location-help');
+
+            function updateLocationRequirement() {
+                const selectedFormat = document.querySelector('.format-radio:checked')?.value;
+                
+                if (selectedFormat === 'online') {
+                    locationInput.removeAttribute('required');
+                    locationRequired.style.display = 'none';
+                    locationHelp.textContent = 'Optional for online events.';
+                    locationHelp.classList.remove('text-slate-500');
+                    locationHelp.classList.add('text-slate-400');
+                } else {
+                    locationInput.setAttribute('required', 'required');
+                    locationRequired.style.display = 'inline';
+                    locationHelp.textContent = 'Required for on-site and hybrid events.';
+                    locationHelp.classList.remove('text-slate-400');
+                    locationHelp.classList.add('text-slate-500');
+                }
+            }
+
+            // Set initial state
+            updateLocationRequirement();
+
+            // Update on format change
+            formatRadios.forEach(radio => {
+                radio.addEventListener('change', updateLocationRequirement);
+            });
         });
     </script>
     @endpush

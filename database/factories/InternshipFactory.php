@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\InternshipCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +18,16 @@ class InternshipFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'title' => fake()->jobTitle(),
+            'description' => fake()->paragraphs(3, true),
+            'company_name' => fake()->company(),
+            'category_id' => InternshipCategory::factory(),
+            'location' => fake()->city(),
+            'type' => fake()->randomElement(['full_time', 'part_time', 'remote', 'hybrid']),
+            'duration' => fake()->randomElement(['3 months', '6 months', '1 year']),
+            'application_deadline' => fake()->dateTimeBetween('+1 week', '+3 months'),
+            'start_date' => fake()->dateTimeBetween('+1 month', '+4 months'),
+            'status' => 'open',
         ];
     }
 }

@@ -18,12 +18,12 @@ class EnsureProfileCompleted
         $user = $request->user();
 
         // If user is authenticated and profile is not completed
-        if ($user && !$user->profile_completed) {
+        if ($user && ! $user->profile_completed) {
             // Allow access to profile completion route, skip route, and logout route
-            if (!$request->routeIs('profile.complete') 
-                && !$request->routeIs('profile.complete.submit') 
-                && !$request->routeIs('profile.complete.skip')
-                && !$request->routeIs('logout')) {
+            if (! $request->routeIs('profile.complete')
+                && ! $request->routeIs('profile.complete.submit')
+                && ! $request->routeIs('profile.complete.skip')
+                && ! $request->routeIs('logout')) {
                 return redirect()->route('profile.complete');
             }
         }

@@ -20,30 +20,111 @@ class PostResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('user_id')->numeric()->disabled(),
-                Forms\Components\TextInput::make('type')->disabled(),
-                Forms\Components\Textarea::make('content')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('images'),
-                Forms\Components\TextInput::make('poll_options'),
-                Forms\Components\DateTimePicker::make('poll_ends_at'),
-                Forms\Components\TextInput::make('hashtags'),
-                Forms\Components\TextInput::make('likes_count')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\TextInput::make('comments_count')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\TextInput::make('shares_count')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
-                Forms\Components\Toggle::make('is_published')
-                    ->required(),
-                Forms\Components\Toggle::make('is_featured')
-                    ->required(),
+                Forms\Components\Section::make('Basic Information')
+                    ->schema([
+                        Forms\Components\Select::make('user_id')
+                            ->label('Author')
+                            ->relationship('user', 'name')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->email)
+                            ->searchable(['name', 'email'])
+                            ->preload()
+                            ->required()
+                            ->disabled(fn ($record) => $record !== null),
+                        Forms\Components\Select::make('type')
+                            ->options([
+                                'text' => 'Text',
+                                'image' => 'Image',
+                                'poll' => 'Poll',
+                            ])
+                            ->required()
+                            ->disabled(fn ($record) => $record !== null),
+                        Forms\Components\Textarea::make('content')
+                            ->label('Content')
+                            ->rows(6)
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Media & Poll')
+                    ->schema([
+                        Forms\Components\FileUpload::make('images')
+                            ->label('Images')
+                            ->image()
+                            ->directory('posts/images')
+                            ->disk('public')
+                            ->visibility('public')
+                            ->multiple()
+                            ->maxFiles(10)
+                            ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])
+                            ->imagePreviewHeight('200')
+                            ->columnSpanFull()
+                            ->visible(fn (Forms\Get $get) => $get('type') === 'image'),
+                        Forms\Components\Repeater::make('poll_options')
+                            ->label('Poll Options')
+                            ->schema([
+                                Forms\Components\TextInput::make('option')
+                                    ->label('Option')
+                                    ->required()
+                                    ->maxLength(255),
+                            ])
+                            ->defaultItems(2)
+                            ->minItems(2)
+                            ->maxItems(10)
+                            ->columnSpanFull()
+                            ->visible(fn (Forms\Get $get) => $get('type') === 'poll'),
+                        Forms\Components\DateTimePicker::make('poll_ends_at')
+                            ->label('Poll End Date & Time')
+                            ->visible(fn (Forms\Get $get) => $get('type') === 'poll'),
+                    ])
+                    ->columns(1)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Tags')
+                    ->schema([
+                        Forms\Components\TagsInput::make('hashtags')
+                            ->label('Hashtags')
+                            ->placeholder('Add a hashtag (without #)')
+                            ->separator(',')
+                            ->splitKeys(['Tab', ','])
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Statistics')
+                    ->schema([
+                        Forms\Components\TextInput::make('likes_count')
+                            ->label('Likes Count')
+                            ->required()
+                            ->numeric()
+                            ->default(0),
+                        Forms\Components\TextInput::make('comments_count')
+                            ->label('Comments Count')
+                            ->required()
+                            ->numeric()
+                            ->default(0),
+                        Forms\Components\TextInput::make('shares_count')
+                            ->label('Shares Count')
+                            ->required()
+                            ->numeric()
+                            ->default(0),
+                    ])
+                    ->columns(3)
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Status & Visibility')
+                    ->schema([
+                        Forms\Components\Toggle::make('is_published')
+                            ->label('Published')
+                            ->helperText('Whether this post is visible to users')
+                            ->required()
+                            ->default(true),
+                        Forms\Components\Toggle::make('is_featured')
+                            ->label('Featured')
+                            ->helperText('Whether this post appears in featured section')
+                            ->required()
+                            ->default(false),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -62,7 +143,15 @@ class PostResource extends Resource
                     ->label('Content')
                     ->limit(80)
                     ->toggleable()
-                    ->searchable(),
+                    ->searchable()
+                    ->formatStateUsing(function ($state) {
+                        if (! $state) {
+                            return null;
+                        }
+
+                        // Strip HTML tags and decode HTML entities to show plain text preview
+                        return html_entity_decode(strip_tags($state), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    }),
                 Tables\Columns\TextColumn::make('likes_count')
                     ->label('Likes')
                     ->numeric()
@@ -115,5 +204,21 @@ class PostResource extends Resource
             'create' => Pages\CreatePost::route('/create'),
             'edit' => Pages\EditPost::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Determine whether the user can view any models.
+     */
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
     }
 }

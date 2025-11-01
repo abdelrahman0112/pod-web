@@ -24,24 +24,30 @@ class CategoryResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('slug')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('description')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('color')
-                    ->required()
-                    ->maxLength(7)
-                    ->default('#4f46e5'),
-                Forms\Components\Toggle::make('is_active')
-                    ->required(),
-                Forms\Components\TextInput::make('sort_order')
-                    ->required()
-                    ->numeric()
-                    ->default(0),
+                Forms\Components\Section::make('Basic Information')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('slug')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\Textarea::make('description')
+                            ->columnSpanFull(),
+                    ]),
+                Forms\Components\Section::make('Settings')
+                    ->schema([
+                        Forms\Components\ColorPicker::make('color')
+                            ->required()
+                            ->default('#4f46e5'),
+                        Forms\Components\Toggle::make('is_active')
+                            ->required(),
+                        Forms\Components\TextInput::make('sort_order')
+                            ->required()
+                            ->numeric()
+                            ->default(0),
+                    ])
+                    ->columns(3),
             ]);
     }
 
@@ -53,8 +59,8 @@ class CategoryResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('slug')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('color')
-                    ->searchable(),
+                Tables\Columns\ColorColumn::make('color')
+                    ->label('Color'),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('sort_order')

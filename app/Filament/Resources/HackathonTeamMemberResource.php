@@ -26,33 +26,65 @@ class HackathonTeamMemberResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('team_id')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('user_id')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('role')
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('skills'),
-                Forms\Components\DateTimePicker::make('joined_at')
-                    ->required(),
+                Forms\Components\Section::make('Team Member Information')
+                    ->schema([
+                        Forms\Components\Select::make('team_id')
+                            ->label('Team')
+                            ->relationship('team', 'name')
+                            ->required()
+                            ->searchable()
+                            ->preload(),
+                        Forms\Components\Select::make('user_id')
+                            ->label('Member')
+                            ->relationship('user', 'name')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->name ?? $record->email)
+                            ->searchable(['name', 'email'])
+                            ->preload()
+                            ->required(),
+                        Forms\Components\TextInput::make('role')
+                            ->label('Role')
+                            ->maxLength(255)
+                            ->helperText('e.g., Developer, Designer, Product Manager'),
+                        Forms\Components\TagsInput::make('skills')
+                            ->label('Skills')
+                            ->placeholder('Add a skill (e.g., React, Python, UI/UX)')
+                            ->separator(',')
+                            ->splitKeys(['Tab', ',']),
+                        Forms\Components\DateTimePicker::make('joined_at')
+                            ->label('Joined At')
+                            ->required()
+                            ->default(now()),
+                    ])
+                    ->columns(2),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function ($query) {
+                $query->with(['team', 'user']);
+            })
             ->columns([
-                Tables\Columns\TextColumn::make('team_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('team.name')
+                    ->label('Team')
+                    ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Member')
+                    ->searchable()
+                    ->sortable()
+                    ->formatStateUsing(fn ($state, $record) => $record->user->name ?? 'N/A'),
                 Tables\Columns\TextColumn::make('role')
+                    ->label('Role')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('skills')
+                    ->label('Skills')
+                    ->badge()
+                    ->separator(',')
+                    ->limit(3),
                 Tables\Columns\TextColumn::make('joined_at')
+                    ->label('Joined At')
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')

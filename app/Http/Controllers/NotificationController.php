@@ -37,8 +37,16 @@ class NotificationController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'notifications' => $notifications,
-                'unread_count' => $user->unreadNotifications()->count(),
+                'success' => true,
+                'data' => $notifications->items(),
+                'meta' => [
+                    'current_page' => $notifications->currentPage(),
+                    'from' => $notifications->firstItem(),
+                    'last_page' => $notifications->lastPage(),
+                    'per_page' => $notifications->perPage(),
+                    'to' => $notifications->lastItem(),
+                    'total' => $notifications->total(),
+                ],
             ]);
         }
 
@@ -46,13 +54,41 @@ class NotificationController extends Controller
     }
 
     /**
-     * Get unread notifications count.
+     * Get unread notifications count (based on viewed_at, not read_at).
+     * Badge shows count of notifications that haven't been viewed yet.
      */
     public function getUnreadCount()
     {
-        $count = Auth::user()->unreadNotifications()->count();
+        $count = Auth::user()->notifications()->whereNull('viewed_at')->count();
 
-        return response()->json(['count' => $count]);
+        return response()->json([
+            'success' => true,
+            'data' => ['count' => $count],
+        ]);
+    }
+
+    /**
+     * Mark all notifications as viewed (when panel is opened).
+     * This sets viewed_at which removes the badge count, but keeps notifications highlighted until clicked.
+     */
+    public function markAllAsViewed()
+    {
+        $user = Auth::user();
+
+        // Set viewed_at for all unviewed notifications
+        // This will reset the badge count but keep them highlighted
+        $user->notifications()
+            ->whereNull('viewed_at')
+            ->update(['viewed_at' => now()]);
+
+        // Return the new unread count (should be 0 since viewed_at is set)
+        $unreadCount = $user->notifications()->whereNull('viewed_at')->count();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'All notifications marked as viewed',
+            'unread_count' => $unreadCount,
+        ]);
     }
 
     /**
@@ -83,15 +119,20 @@ class NotificationController extends Controller
     /**
      * Mark all notifications as read.
      */
-    public function markAllAsRead()
+    public function markAllAsRead(Request $request)
     {
         $user = Auth::user();
         $user->unreadNotifications->markAsRead();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'All notifications marked as read',
-        ]);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'All notifications marked as read',
+            ]);
+        }
+
+        return redirect()->route('notifications.index')
+            ->with('success', 'All notifications marked as read');
     }
 
     /**
@@ -196,7 +237,7 @@ class NotificationController extends Controller
      */
     public function test(Request $request)
     {
-        if (! Auth::user()->hasRole(['admin', 'super_admin'])) {
+        if (! Auth::user()->hasAnyRole(['admin', 'superadmin'])) {
             abort(403);
         }
 

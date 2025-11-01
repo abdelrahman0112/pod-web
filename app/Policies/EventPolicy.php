@@ -75,4 +75,18 @@ class EventPolicy
     {
         return false;
     }
+
+    /**
+     * Determine whether the user can view registrations for the event.
+     */
+    public function viewRegistrations(User $user, Event $event): bool
+    {
+        // Allow superadmin and admin to view any event registrations
+        if (in_array($user->role, ['superadmin', 'admin'])) {
+            return true;
+        }
+
+        // Allow event creator to view registrations for their own event
+        return $event->created_by === $user->id;
+    }
 }

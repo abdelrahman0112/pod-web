@@ -87,7 +87,7 @@ class ProfileController extends Controller
             'request_data' => $request->except(['password', 'password_confirmation', 'avatar']),
         ]);
 
-        $validator = Validator::make($request->all(), [
+        $rules = [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
@@ -114,12 +114,21 @@ class ProfileController extends Controller
             'twitter_url' => ['nullable', 'url', 'max:500'],
             'website_url' => ['nullable', 'url', 'max:500'],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
-        ]);
+        ];
+
+        // Add password validation rules if user wants to change password
+        // Only require if current_password is provided (main indicator of intent to change)
+        if ($request->filled('current_password')) {
+            $rules['current_password'] = ['required'];
+            $rules['password'] = ['required', 'confirmed', 'min:8'];
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             \Log::error('Profile update validation failed', [
                 'errors' => $validator->errors()->toArray(),
-                'input' => $request->all(),
+                'input' => $request->except(['password', 'password_confirmation', 'current_password']),
             ]);
 
             return back()->withErrors($validator)->withInput();
@@ -150,6 +159,15 @@ class ProfileController extends Controller
             'gender' => $userData['gender'] ?? null,
             'experience_level' => $userData['experience_level'] ?? null,
         ]);
+
+        // Handle password change if provided
+        if ($request->filled('current_password') && $request->filled('password')) {
+            if (! Hash::check($request->current_password, $user->password)) {
+                return back()->withErrors(['current_password' => 'Current password is incorrect.'])->withInput();
+            }
+
+            $userData['password'] = Hash::make($request->password);
+        }
 
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
@@ -207,14 +225,22 @@ class ProfileController extends Controller
         // Reload the user to get the casted values
         $user->refresh();
 
+        $successMessage = 'Profile updated successfully!';
+        if ($request->filled('current_password') && $request->filled('password')) {
+            $successMessage = 'Profile and password updated successfully!';
+        }
+
         \Log::info('Profile updated successfully', [
             'user_id' => $user->id,
             'updated_fields' => array_keys($userData),
             'gender' => $user->gender?->value,
             'experience_level' => $user->experience_level?->value,
+            'password_changed' => $request->filled('current_password') && $request->filled('password'),
         ]);
 
-        return redirect()->back()->with('success', 'Profile updated successfully!');
+        $redirectUrl = $request->headers->get('referer') ?? route('profile.edit');
+
+        return redirect($redirectUrl)->with('success', $successMessage);
     }
 
     /**

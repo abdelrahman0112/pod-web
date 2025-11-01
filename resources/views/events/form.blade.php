@@ -183,6 +183,56 @@
                 </div>
             </div>
 
+            <!-- Event Agenda -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                <h2 class="text-xl font-semibold text-slate-800 mb-6">Event Agenda</h2>
+                <div id="agenda-items-container" class="space-y-4">
+                    @php
+                        $agendaItems = old('agenda_items', $isEdit && $event->agendaItems ? $event->agendaItems->map(function($item) {
+                            return [
+                                'title' => $item->title,
+                                'start_time' => $item->start_time ? $item->start_time->format('Y-m-d\TH:i') : '',
+                            ];
+                        })->toArray() : []);
+                    @endphp
+                    @if(count($agendaItems) > 0)
+                        @foreach($agendaItems as $index => $item)
+                            <div class="agenda-item border border-slate-200 rounded-lg p-4 bg-slate-50">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-sm font-medium text-slate-700">Agenda Item #<span class="item-number">{{ $loop->iteration }}</span></h3>
+                                    <button type="button" onclick="removeAgendaItem(this)" class="text-red-600 hover:text-red-700 text-sm">
+                                        <i class="ri-delete-bin-line"></i> Remove
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-2">Title/Description *</label>
+                                        <input type="text" 
+                                               name="agenda_items[{{ $index }}][title]"
+                                               value="{{ is_array($item) ? ($item['title'] ?? '') : ($item->title ?? '') }}"
+                                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                               required />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-2">Date & Time *</label>
+                                        <input type="datetime-local" 
+                                               name="agenda_items[{{ $index }}][start_time]"
+                                               value="{{ is_array($item) ? ($item['start_time'] ?? '') : ($item->start_time ? $item->start_time->format('Y-m-d\TH:i') : '') }}"
+                                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                               required />
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
+                <button type="button" onclick="addAgendaItem()" class="mt-4 inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">
+                    <i class="ri-add-line mr-2"></i>
+                    Add Agenda Item
+                </button>
+                <p class="mt-2 text-sm text-slate-500">Add agenda items with title and date/time.</p>
+            </div>
+
             <!-- Event Image -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
                 <h2 class="text-xl font-semibold text-slate-800 mb-6">Event Banner</h2>
@@ -305,23 +355,52 @@
                 fileInput.addEventListener('change', function(e) {
                     const file = e.target.files[0];
                     if (file) {
+                        // Hide existing banner if editing
+                        const existingBanner = document.querySelector('img[alt="Current banner"]')?.closest('div.mb-4');
+                        if (existingBanner) {
+                            existingBanner.style.display = 'none';
+                        }
+                        
                         const reader = new FileReader();
                         reader.onload = function(e) {
                             const uploadArea = fileInput.closest('.border-dashed');
-                            uploadArea.innerHTML = `
-                                <img src="${e.target.result}" alt="Preview" class="w-full h-48 object-cover rounded-lg mb-4" />
-                                <button type="button" onclick="resetFileUpload()" class="text-sm text-red-600 hover:text-red-700">
-                                    Remove Image
-                                </button>
+                            if (!uploadArea) return;
+                            
+                            // Remove any existing preview
+                            const existingPreview = uploadArea.querySelector('img[alt="Preview"]');
+                            const existingRemoveBtn = uploadArea.querySelector('button[onclick="resetFileUpload()"]');
+                            if (existingPreview) existingPreview.remove();
+                            if (existingRemoveBtn) existingRemoveBtn.remove();
+                            
+                            // Create preview HTML
+                            const previewHtml = `
+                                <div class="mb-4">
+                                    <img src="${e.target.result}" alt="Preview" class="w-full h-48 object-cover rounded-lg" />
+                                    <button type="button" onclick="resetFileUpload()" class="mt-2 text-sm text-red-600 hover:text-red-700">
+                                        Remove Image
+                                    </button>
+                                </div>
                             `;
-                            // Re-add the original file input (hidden)
-                            const hiddenInput = document.createElement('input');
-                            hiddenInput.type = 'file';
-                            hiddenInput.name = 'banner_image';
-                            hiddenInput.accept = 'image/*';
-                            hiddenInput.className = 'hidden';
-                            hiddenInput.id = 'banner-upload-hidden';
-                            uploadArea.appendChild(hiddenInput);
+                            
+                            // Hide all original upload area content
+                            const label = uploadArea.querySelector('label[for="banner-upload"]');
+                            const icon = uploadArea.querySelector('i.ri-image-add-line');
+                            const paragraphs = uploadArea.querySelectorAll('p');
+                            
+                            if (label) label.style.display = 'none';
+                            if (icon) icon.style.display = 'none';
+                            paragraphs.forEach(p => {
+                                if (p.closest('.border-dashed') === uploadArea) {
+                                    p.style.display = 'none';
+                                }
+                            });
+                            
+                            // Insert preview at the beginning
+                            uploadArea.insertAdjacentHTML('afterbegin', previewHtml);
+                        };
+                        reader.onerror = function() {
+                            console.error('Error reading file');
+                            alert('Error loading image preview. Please try again.');
                         };
                         reader.readAsDataURL(file);
                     }
@@ -380,41 +459,109 @@
                 });
             }
 
+            // Agenda items management
+            @php
+                $initialCount = $isEdit && isset($event->agendaItems) ? $event->agendaItems->count() : 0;
+                if (old('agenda_items') && count(old('agenda_items')) > $initialCount) {
+                    $initialCount = count(old('agenda_items'));
+                }
+            @endphp
+            let agendaItemIndex = {{ $initialCount }};
+
+            window.addAgendaItem = function() {
+                const container = document.getElementById('agenda-items-container');
+                const itemHtml = `
+                    <div class="agenda-item border border-slate-200 rounded-lg p-4 bg-slate-50">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-sm font-medium text-slate-700">Agenda Item #<span class="item-number">${agendaItemIndex + 1}</span></h3>
+                            <button type="button" onclick="removeAgendaItem(this)" class="text-red-600 hover:text-red-700 text-sm">
+                                <i class="ri-delete-bin-line"></i> Remove
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Title/Description *</label>
+                                <input type="text" 
+                                       name="agenda_items[${agendaItemIndex}][title]"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                       required />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Date & Time *</label>
+                                <input type="datetime-local" 
+                                       name="agenda_items[${agendaItemIndex}][start_time]"
+                                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                       required />
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', itemHtml);
+                agendaItemIndex++;
+                updateAgendaItemNumbers();
+            };
+
+            window.removeAgendaItem = function(button) {
+                if (confirm('Are you sure you want to remove this agenda item?')) {
+                    button.closest('.agenda-item').remove();
+                    updateAgendaItemNumbers();
+                }
+            };
+
+            function updateAgendaItemNumbers() {
+                const items = document.querySelectorAll('.agenda-item');
+                items.forEach((item, index) => {
+                    const numberSpan = item.querySelector('.item-number');
+                    if (numberSpan) {
+                        numberSpan.textContent = index + 1;
+                    }
+                });
+            }
+
             // Reset file upload function
             window.resetFileUpload = function() {
-                const uploadArea = document.querySelector('.border-dashed');
-                uploadArea.innerHTML = `
-                    <i class="ri-image-add-line text-2xl text-slate-400 mb-4"></i>
-                    <p class="text-slate-600 mb-2">Click to upload or drag and drop</p>
-                    <p class="text-sm text-slate-500">PNG, JPG, GIF up to 2MB</p>
-                    <input type="file" 
-                           name="banner_image" 
-                           accept="image/*" 
-                           class="hidden" 
-                           id="banner-upload-reset" />
-                    <label for="banner-upload-reset" class="cursor-pointer">
-                        <div class="mt-4 inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50">
-                            <i class="ri-upload-line mr-2"></i>
-                            Choose File
-                        </div>
-                    </label>
-                `;
-                // Re-attach event listener
-                const newFileInput = document.getElementById('banner-upload-reset');
-                newFileInput.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const uploadArea = newFileInput.closest('.border-dashed');
-                            uploadArea.innerHTML = `
-                                <img src="${e.target.result}" alt="Preview" class="w-full h-48 object-cover rounded-lg mb-4" />
-                                <button type="button" onclick="resetFileUpload()" class="text-sm text-red-600 hover:text-red-700">
-                                    Remove Image
-                                </button>
-                            `;
-                        };
-                        reader.readAsDataURL(file);
+                const fileInput = document.getElementById('banner-upload');
+                const uploadArea = fileInput?.closest('.border-dashed');
+                if (!uploadArea || !fileInput) return;
+                
+                // Reset file input
+                fileInput.value = '';
+                
+                // Remove preview image and button
+                const previewImg = uploadArea.querySelector('img[alt="Preview"]');
+                if (previewImg) {
+                    const previewContainer = previewImg.closest('div.mb-4');
+                    if (previewContainer) {
+                        previewContainer.remove();
+                    } else {
+                        previewImg.remove();
+                    }
+                }
+                
+                const removeBtn = uploadArea.querySelector('button[onclick="resetFileUpload()"]');
+                if (removeBtn) {
+                    // Only remove if not already removed with container
+                    if (removeBtn.parentElement && removeBtn.parentElement.closest('.border-dashed') === uploadArea) {
+                        removeBtn.remove();
+                    }
+                }
+                
+                // Show existing banner again if editing
+                const existingBanner = document.querySelector('img[alt="Current banner"]')?.closest('div.mb-4');
+                if (existingBanner) {
+                    existingBanner.style.display = 'block';
+                }
+                
+                // Show original elements
+                const label = uploadArea.querySelector('label[for="banner-upload"]');
+                const icon = uploadArea.querySelector('i.ri-image-add-line');
+                const paragraphs = uploadArea.querySelectorAll('p');
+                
+                if (label) label.style.display = 'block';
+                if (icon) icon.style.display = 'inline-block';
+                paragraphs.forEach(p => {
+                    if (p.closest('.border-dashed') === uploadArea) {
+                        p.style.display = 'block';
                     }
                 });
             };

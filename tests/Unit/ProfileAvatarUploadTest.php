@@ -16,11 +16,19 @@ class ProfileAvatarUploadTest extends TestCase
     {
         Storage::fake('public');
 
-        // Create a user
+        // Create a user with complete profile
         $user = User::factory()->create([
             'first_name' => 'John',
             'last_name' => 'Doe',
             'email' => 'john@example.com',
+            'phone' => '1234567890',
+            'city' => 'Test City',
+            'country' => 'Test Country',
+            'gender' => 'male',
+            'bio' => 'Test bio',
+            'skills' => ['PHP', 'Laravel'],
+            'experience_level' => 'entry',
+            'profile_completed' => true,
         ]);
 
         // Create a fake image file
@@ -30,15 +38,16 @@ class ProfileAvatarUploadTest extends TestCase
         $this->actingAs($user);
 
         // Submit the profile update with avatar
-        $response = $this->put(route('profile.update'), [
-            'first_name' => 'John',
-            'last_name' => 'Doe',
-            'email' => 'john@example.com',
-            'avatar' => $file,
-        ]);
+        $response = $this->from(route('profile.edit'))
+            ->put(route('profile.update'), [
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'email' => $user->email, // Use the same email to avoid unique validation
+                'avatar' => $file,
+            ]);
 
         // Assert the response is successful
-        $response->assertRedirect();
+        $response->assertRedirect(route('profile.edit'));
         $response->assertSessionHas('success', 'Profile updated successfully!');
 
         // Refresh the user model
@@ -55,11 +64,12 @@ class ProfileAvatarUploadTest extends TestCase
 
     public function test_avatar_upload_validates_file_size(): void
     {
-        // Create a user
+        // Create a user with complete profile
         $user = User::factory()->create([
             'first_name' => 'John',
             'last_name' => 'Doe',
             'email' => 'john@example.com',
+            'profile_completed' => true,
         ]);
 
         // Create a file that's too large (3MB)
@@ -69,12 +79,13 @@ class ProfileAvatarUploadTest extends TestCase
         $this->actingAs($user);
 
         // Submit the profile update with oversized avatar
-        $response = $this->put(route('profile.update'), [
-            'first_name' => 'John',
-            'last_name' => 'Doe',
-            'email' => 'john@example.com',
-            'avatar' => $file,
-        ]);
+        $response = $this->from(route('profile.edit'))
+            ->put(route('profile.update'), [
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'email' => $user->email,
+                'avatar' => $file,
+            ]);
 
         // Assert validation failed
         $response->assertSessionHasErrors('avatar');
@@ -82,11 +93,12 @@ class ProfileAvatarUploadTest extends TestCase
 
     public function test_avatar_upload_validates_file_type(): void
     {
-        // Create a user
+        // Create a user with complete profile
         $user = User::factory()->create([
             'first_name' => 'John',
             'last_name' => 'Doe',
             'email' => 'john@example.com',
+            'profile_completed' => true,
         ]);
 
         // Create a non-image file
@@ -96,12 +108,13 @@ class ProfileAvatarUploadTest extends TestCase
         $this->actingAs($user);
 
         // Submit the profile update with invalid file type
-        $response = $this->put(route('profile.update'), [
-            'first_name' => 'John',
-            'last_name' => 'Doe',
-            'email' => 'john@example.com',
-            'avatar' => $file,
-        ]);
+        $response = $this->from(route('profile.edit'))
+            ->put(route('profile.update'), [
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'email' => $user->email,
+                'avatar' => $file,
+            ]);
 
         // Assert validation failed
         $response->assertSessionHasErrors('avatar');

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard - People Of Data')
+@section('title', 'Newsfeed - People Of Data')
 
 @section('content')
 <!-- Alert Container -->
@@ -184,7 +184,7 @@
                                         <div class="text-xs text-slate-500 mt-0.5">{{ $trendingPost->created_at->diffForHumans() }}</div>
                                     </div>
                                     <p class="text-sm text-slate-700 line-clamp-2">
-                                        {{ Str::limit($trendingPost->content, 80) }}
+                                        {{ Str::limit(strip_tags($trendingPost->content), 80) }}
                                     </p>
                                     <div class="flex items-center space-x-3 mt-2">
                                         <div class="flex items-center space-x-1 text-xs text-slate-500">

@@ -10,6 +10,16 @@
             title="Edit Profile"
             description="Update your personal information and professional details" />
 
+        @if(session('success'))
+            <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)" 
+                 class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative">
+                <span class="block sm:inline">{{ session('success') }}</span>
+                <button @click="show = false" class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                    <i class="ri-close-line text-green-500 hover:text-green-700"></i>
+                </button>
+            </div>
+        @endif
+
         <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
             @csrf
             @method('PUT')
@@ -146,6 +156,93 @@
                 </div>
             </div>
 
+            <!-- Change Password -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-8">
+                <h2 class="text-xl font-semibold text-slate-800 mb-6">Change Password</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Current Password -->
+                    <div class="md:col-span-2">
+                        <label for="current_password" class="block text-sm font-medium text-slate-700 mb-2">
+                            Current Password
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="password"
+                                name="current_password"
+                                id="current_password"
+                                placeholder="Enter your current password"
+                                class="block w-full rounded-lg border border-slate-300 px-3 py-2 pr-12 text-slate-900 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors @error('current_password') border-red-300 @enderror"
+                            />
+                            <button 
+                                type="button" 
+                                onclick="togglePasswordVisibility('current_password')" 
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                                <i id="current_password-icon" class="ri-eye-line text-xl"></i>
+                            </button>
+                        </div>
+                        @error('current_password')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- New Password -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-700 mb-2">
+                            New Password
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="password"
+                                name="password"
+                                id="password"
+                                placeholder="Enter new password"
+                                class="block w-full rounded-lg border border-slate-300 px-3 py-2 pr-12 text-slate-900 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors @error('password') border-red-300 @enderror"
+                            />
+                            <button 
+                                type="button" 
+                                onclick="togglePasswordVisibility('password')" 
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                                <i id="password-icon" class="ri-eye-line text-xl"></i>
+                            </button>
+                        </div>
+                        @error('password')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+                        <p class="text-sm text-slate-500 mt-1">Minimum 8 characters</p>
+                    </div>
+
+                    <!-- Confirm New Password -->
+                    <div>
+                        <label for="password_confirmation" class="block text-sm font-medium text-slate-700 mb-2">
+                            Confirm New Password
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="password"
+                                name="password_confirmation"
+                                id="password_confirmation"
+                                placeholder="Confirm new password"
+                                class="block w-full rounded-lg border border-slate-300 px-3 py-2 pr-12 text-slate-900 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors @error('password_confirmation') border-red-300 @enderror"
+                            />
+                            <button 
+                                type="button" 
+                                onclick="togglePasswordVisibility('password_confirmation')" 
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                                <i id="password_confirmation-icon" class="ri-eye-line text-xl"></i>
+                            </button>
+                        </div>
+                        @error('password_confirmation')
+                            <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 mt-4">
+                    <i class="ri-information-line mr-1"></i>
+                    Leave blank if you don't want to change your password
+                </p>
+            </div>
+
             <!-- Professional Information -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-8">
                 <h2 class="text-xl font-semibold text-slate-800 mb-6">Professional Information</h2>
@@ -256,6 +353,22 @@
 
     @push('scripts')
     <script>
+        // Password visibility toggle function
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = document.getElementById(fieldId + '-icon');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('ri-eye-line');
+                icon.classList.add('ri-eye-off-line');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('ri-eye-off-line');
+                icon.classList.add('ri-eye-line');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Profile edit page loaded');
             
@@ -368,6 +481,40 @@
                         e.preventDefault();
                         alert('Please fill in all required fields.');
                         return;
+                    }
+                    
+                    // Validate password fields if any password field is filled
+                    const currentPassword = form.querySelector('[name="current_password"]');
+                    const newPassword = form.querySelector('[name="password"]');
+                    const confirmPassword = form.querySelector('[name="password_confirmation"]');
+                    
+                    if (currentPassword && newPassword && confirmPassword) {
+                        const hasCurrentPassword = currentPassword.value.trim() !== '';
+                        const hasNewPassword = newPassword.value.trim() !== '';
+                        const hasConfirmPassword = confirmPassword.value.trim() !== '';
+                        
+                        if (hasCurrentPassword || hasNewPassword || hasConfirmPassword) {
+                            // If any password field is filled, all must be filled
+                            if (!hasCurrentPassword || !hasNewPassword || !hasConfirmPassword) {
+                                e.preventDefault();
+                                alert('Please fill in all password fields to change your password.');
+                                return;
+                            }
+                            
+                            // Validate password length
+                            if (newPassword.value.length < 8) {
+                                e.preventDefault();
+                                alert('New password must be at least 8 characters long.');
+                                return;
+                            }
+                            
+                            // Validate password match
+                            if (newPassword.value !== confirmPassword.value) {
+                                e.preventDefault();
+                                alert('New password and confirmation do not match.');
+                                return;
+                            }
+                        }
                     }
                     
                     console.log('Form validation passed, submitting...');

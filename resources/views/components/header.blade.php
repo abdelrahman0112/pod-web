@@ -45,13 +45,8 @@
                 <span id="header-unread-badge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden"></span>
             </a>
             
-            <!-- Notifications -->
-            <button class="relative text-slate-600 hover:text-indigo-600 transition-colors">
-                <div class="w-6 h-6 flex items-center justify-center">
-                    <i class="ri-notification-3-line"></i>
-                </div>
-                <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">5</span>
-            </button>
+            <!-- Notifications Panel -->
+            <x-notifications-panel />
             
             <!-- Profile Menu -->
             <div class="relative" id="profile-menu">

@@ -30,7 +30,6 @@ class Hackathon extends Model
         'rules',
         'is_active',
         'created_by',
-        'sponsor_id',
         'cover_image',
     ];
 
@@ -68,14 +67,6 @@ class Hackathon extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * Get the sponsor of this hackathon.
-     */
-    public function sponsor()
-    {
-        return $this->belongsTo(User::class, 'sponsor_id');
     }
 
     /**

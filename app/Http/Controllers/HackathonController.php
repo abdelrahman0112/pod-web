@@ -120,31 +120,25 @@ class HackathonController extends Controller
                 'max_participants' => 'nullable|integer|min:1',
                 'max_team_size' => 'required|integer|min:1|max:10',
                 'min_team_size' => 'required|integer|min:1|lte:max_team_size',
-                'entry_fee' => 'nullable|numeric|min:0',
                 'prize_pool' => 'nullable|numeric|min:0',
-                'location' => 'nullable|string|max:255',
+                'location' => 'nullable|string|max:255|required_if:format,on-site,hybrid',
                 'format' => 'required|in:'.implode(',', array_column(HackathonFormat::cases(), 'value')),
                 'skill_requirements' => 'nullable|in:'.implode(',', array_column(SkillLevel::cases(), 'value')),
                 'technologies' => 'nullable|array',
                 'technologies.*' => 'string|max:255',
                 'rules' => 'nullable|string',
                 'category_id' => 'nullable|exists:hackathon_categories,id',
-                'sponsor_id' => 'nullable|exists:users,id',
                 'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
+            // Set location to null if format is online and location is empty
+            if ($validated['format'] === 'online' && empty($validated['location'])) {
+                $validated['location'] = null;
+            }
+
             $validated['created_by'] = Auth::id();
             $validated['is_active'] = true;
-
-            // Set location to "Online" if format is online
-            if ($validated['format'] === 'online') {
-                $validated['location'] = 'Online';
-            }
-
-            // Ensure entry_fee is never null or empty
-            if (! isset($validated['entry_fee']) || $validated['entry_fee'] === null || $validated['entry_fee'] === '') {
-                $validated['entry_fee'] = 0;
-            }
+            $validated['entry_fee'] = 0; // Set default entry fee (hidden field)
 
             // Handle cover image upload
             if ($request->hasFile('cover_image')) {
@@ -223,34 +217,29 @@ class HackathonController extends Controller
             $validated = $request->validate([
                 'title' => 'required|string|max:255',
                 'description' => 'required|string',
-                'start_date' => 'required|date|after:now',
+                'start_date' => 'required|date',
                 'end_date' => 'required|date|after:start_date',
-                'registration_deadline' => 'required|date|after:now|before:start_date',
+                'registration_deadline' => 'required|date|before:start_date',
                 'max_participants' => 'nullable|integer|min:1',
                 'max_team_size' => 'required|integer|min:1|max:10',
                 'min_team_size' => 'required|integer|min:1|lte:max_team_size',
-                'entry_fee' => 'nullable|numeric|min:0',
                 'prize_pool' => 'nullable|numeric|min:0',
-                'location' => 'nullable|string|max:255',
+                'location' => 'nullable|string|max:255|required_if:format,on-site,hybrid',
                 'format' => 'required|in:'.implode(',', array_column(HackathonFormat::cases(), 'value')),
                 'skill_requirements' => 'nullable|in:'.implode(',', array_column(SkillLevel::cases(), 'value')),
                 'technologies' => 'nullable|array',
                 'technologies.*' => 'string|max:255',
                 'rules' => 'nullable|string',
-                'sponsor_id' => 'nullable|exists:users,id',
                 'is_active' => 'sometimes|boolean',
                 'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
-            // Set location to "Online" if format is online
-            if ($validated['format'] === 'online') {
-                $validated['location'] = 'Online';
+            // Set location to null if format is online and location is empty
+            if ($validated['format'] === 'online' && empty($validated['location'])) {
+                $validated['location'] = null;
             }
 
-            // Ensure entry_fee is never null or empty
-            if (! isset($validated['entry_fee']) || $validated['entry_fee'] === null || $validated['entry_fee'] === '') {
-                $validated['entry_fee'] = 0;
-            }
+            $validated['entry_fee'] = 0; // Set default entry fee (hidden field)
 
             // Handle checkbox - if not checked, set to false
             $validated['is_active'] = $request->has('is_active') ? true : false;

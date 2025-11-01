@@ -38,7 +38,16 @@
             <!-- Title with Prize Floating Right -->
             <div class="flex items-start justify-between mb-4">
                 <div class="flex-1 min-w-0 pr-4">
-                    <h1 class="text-3xl font-bold text-slate-800 mb-2">{{ $hackathon->title }}</h1>
+                    <div class="flex items-center gap-3 mb-2">
+                        <h1 class="text-3xl font-bold text-slate-800">{{ $hackathon->title }}</h1>
+                        @if(auth()->check() && in_array(auth()->user()->role, ['superadmin', 'admin']))
+                            <a href="{{ route('hackathons.edit', $hackathon) }}" 
+                               class="inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors text-sm">
+                                <i class="ri-edit-line mr-1.5"></i>
+                                Edit
+                            </a>
+                        @endif
+                    </div>
                     <div class="flex items-center space-x-2 text-sm text-slate-500">
                         <i class="ri-user-line"></i>
                         <span class="flex items-center">{{ $hackathon->creator->name ?? 'Organizer' }}<x-business-badge :user="$hackathon->creator" /></span>
@@ -134,7 +143,7 @@
                             <span>Hybrid</span>
                         </span>
                     @endif
-                    @if(in_array($hackathon->format->value, ['on-site', 'hybrid']) && $hackathon->location)
+                    @if(in_array($hackathon->format->value, ['on-site', 'hybrid']) && !empty($hackathon->location))
                         <span class="text-xs text-slate-500">•</span>
                         <span class="inline-flex items-center space-x-1 text-slate-600 text-xs font-medium">
                             <i class="ri-map-pin-line"></i>
