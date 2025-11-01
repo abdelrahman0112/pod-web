@@ -128,25 +128,54 @@ class AuthController extends Controller
      */
     public function forgotPassword(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'email' => ['required', 'email'],
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        $status = \Illuminate\Support\Facades\Password::sendResetLink(
+            $request->only('email')
+        );
+
+        // Laravel Password::sendResetLink returns status strings
+        // We don't want to reveal if email exists or not for security
+        return back()->with('status', 'If the email exists, we have emailed you a password reset link.');
+    }
+
+    /**
+     * Show reset password form.
+     */
+    public function showResetPasswordForm(Request $request)
+    {
+        return view('auth.reset-password', ['request' => $request]);
+    }
+
+    /**
+     * Handle password reset.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+        ]);
+
+        $status = \Illuminate\Support\Facades\Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->save();
+
+                event(new \Illuminate\Auth\Events\PasswordReset($user));
+            }
+        );
+
+        if ($status === \Illuminate\Support\Facades\Password::PASSWORD_RESET) {
+            return redirect()->route('login')->with('status', 'Your password has been reset! You can now sign in.');
         }
 
-        $user = User::where('email', $request->email)->first();
-
-        if (! $user) {
-            return back()->withErrors([
-                'email' => 'We could not find a user with that email address.',
-            ])->withInput();
-        }
-
-        // Send password reset email (implement actual password reset logic)
-        // For now, just return success message
-        return back()->with('status', 'We have emailed your password reset link!');
+        return back()->withErrors(['email' => [__($status)]]);
     }
 
     /**

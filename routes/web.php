@@ -41,6 +41,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:3,1')->name('password.email');
 
+    // Reset Password
+    Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:3,1')->name('password.store');
+
     // Social Authentication
     Route::get('/auth/google', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
     Route::get('/auth/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
