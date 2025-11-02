@@ -4,6 +4,9 @@ primary_region = "iad"
 [build]
   dockerfile = "Dockerfile"
 
+[deploy]
+  release_command = "php artisan migrate:fresh --force"
+
 [env]
   APP_ENV = "production"
 
