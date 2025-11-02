@@ -3,7 +3,7 @@
 # Base image with PHP and essential tools
 FROM php:8.4-fpm-alpine AS base
 WORKDIR /var/www/html
-RUN apk add --no-cache bash curl git
+RUN apk add --no-cache bash curl git icu-dev
 # Add common PHP extensions
 RUN docker-php-ext-install pdo pdo_mysql bcmath exif intl zip
 
