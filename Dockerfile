@@ -10,6 +10,7 @@ RUN docker-php-ext-install pdo pdo_mysql bcmath exif intl zip
 # Composer stage
 FROM composer:2 AS composer_stage
 WORKDIR /app
+RUN apt-get update && apt-get install -y libicu-dev libzip-dev && docker-php-ext-install intl zip
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --no-plugins --no-scripts --prefer-dist
 
