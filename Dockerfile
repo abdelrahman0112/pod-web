@@ -1,50 +1,47 @@
-FROM php:8.4-cli-alpine
+# syntax=docker/dockerfile:1
 
-# Install system dependencies and PHP extensions
-RUN apk add --no-cache \
-    git \
-    curl \
-    libpng-dev \
-    oniguruma-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    postgresql-dev \
-    icu-dev \
-    imagemagick-dev \
-    libzip-dev
+# Base image with PHP and essential tools
+FROM php:8.4-fpm-alpine AS base
+WORKDIR /var/www/html
+RUN apk add --no-cache bash curl git
+# Add common PHP extensions
+RUN docker-php-ext-install pdo pdo_mysql bcmath exif intl zip
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd intl zip
+# Composer stage
+FROM composer:2 AS composer_stage
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --no-plugins --no-scripts --prefer-dist
 
-# Install Imagick
-RUN apk add --no-cache imagemagick-dev && \
-    pecl install imagick && \
-    docker-php-ext-enable imagick
-
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Install Node.js
-RUN apk add --no-cache nodejs npm
-
-# Set working directory
-WORKDIR /var/www
-
-# Copy application files
-COPY . /var/www
-
-# Install dependencies
-RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
-RUN composer run-script post-autoload-dump || true
-RUN npm install --production
+# Frontend build stage
+FROM node:18-alpine AS frontend_stage
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
 RUN npm run build
 
+# Final application image
+FROM base AS app
+# Install NGINX and Supervisor for process management
+RUN apk add --no-cache nginx supervisor
+# Copy application code
+COPY . .
+# Copy installed vendor dependencies
+COPY --from=composer_stage /app/vendor ./vendor
+# Copy built frontend assets
+COPY --from=frontend_stage /app/public/build ./public/build
+# Copy NGINX and Supervisor configurations
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/supervisord.conf /etc/supervisord.conf
+# Copy entrypoint script
+COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
 # Set permissions
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 8080
-
-CMD php artisan serve --host=0.0.0.0 --port=8080
+CMD ["/usr/local/bin/start.sh"]
 

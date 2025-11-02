@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+# Run database migrations
+php artisan migrate --force
+
+# Cache configuration
+php artisan config:cache
+
+# Cache routes
+php artisan route:cache
+
+# Cache views
+php artisan view:cache
+
+# Start Supervisor
+exec /usr/bin/supervisord -c /etc/supervisord.conf
