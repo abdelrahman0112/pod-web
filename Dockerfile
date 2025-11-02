@@ -1,4 +1,4 @@
-FROM php:8.4-fpm-alpine
+FROM php:8.4-cli-alpine
 
 # Install system dependencies and PHP extensions
 RUN apk add --no-cache \
@@ -42,9 +42,6 @@ RUN npm run build
 # Set permissions
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
-
-# Copy PHP-FPM configuration
-COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 
 EXPOSE 8080
 
