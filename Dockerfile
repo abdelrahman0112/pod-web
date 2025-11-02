@@ -35,7 +35,8 @@ WORKDIR /var/www
 COPY . /var/www
 
 # Install dependencies
-RUN composer install --optimize-autoloader --no-dev --no-interaction
+RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
+RUN composer run-script post-autoload-dump || true
 RUN npm install --production
 RUN npm run build
 
